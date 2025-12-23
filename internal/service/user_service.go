@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/longvhv/saas-framework-go/pkg/errors"
 	"github.com/longvhv/saas-framework-go/pkg/logger"
