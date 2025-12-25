@@ -1,0 +1,111 @@
+@startuml User Lifecycle
+title User Lifecycle - Registration, Verification & Activation
+
+actor "New User" as User
+participant "API Gateway" as Gateway
+participant "Auth Service" as Auth
+participant "User Service" as UserService
+database "MongoDB" as DB
+participant "Notification Service" as Notify
+
+== User Registration ==
+User -> Gateway: POST /auth/register\n{email, password}
+activate Gateway
+
+Gateway -> Auth: ValidateRegistration()
+activate Auth
+Auth -> Auth: ValidateEmail()\nHashPassword()
+Auth -> UserService: CreateUser(email, tenant_id)
+activate UserService
+
+UserService -> UserService: ValidateUniqueEmail()
+UserService -> DB: InsertUser()\n{email, tenant_id, is_active: false}
+activate DB
+DB --> UserService: user_id
+deactivate DB
+
+UserService --> Auth: User Created
+deactivate UserService
+
+Auth -> Auth: GenerateVerificationToken()
+Auth -> Notify: SendVerificationEmail(email, token)
+activate Notify
+Notify -> User: Verification Email
+deactivate Notify
+
+Auth --> Gateway: Registration Successful
+deactivate Auth
+Gateway --> User: 201 Created\n{user_id, verification_required: true}
+deactivate Gateway
+
+== Email Verification ==
+User -> Gateway: GET /auth/verify?token=xxx
+activate Gateway
+Gateway -> Auth: VerifyEmail(token)
+activate Auth
+
+Auth -> Auth: ValidateToken()
+Auth -> UserService: ActivateUser(user_id)
+activate UserService
+
+UserService -> DB: UpdateUser()\n{is_active: true, verified_at: now}
+activate DB
+DB --> UserService: Updated
+deactivate DB
+
+UserService --> Auth: User Activated
+deactivate UserService
+
+Auth --> Gateway: Verification Successful
+deactivate Auth
+Gateway --> User: 200 OK\n{verified: true}
+deactivate Gateway
+
+== User Activation & First Login ==
+User -> Gateway: POST /auth/login\n{email, password}
+activate Gateway
+
+Gateway -> Auth: Login(email, password)
+activate Auth
+Auth -> UserService: GetUserByEmail(email)
+activate UserService
+
+UserService -> DB: FindOne()\n{email, is_active: true}
+activate DB
+DB --> UserService: user_data
+deactivate DB
+
+UserService --> Auth: User Found
+deactivate UserService
+
+Auth -> Auth: VerifyPassword()\nGenerateJWT()
+Auth --> Gateway: Login Successful\n{access_token, user}
+deactivate Auth
+
+Gateway --> User: 200 OK\n{token, user_profile}
+deactivate Gateway
+
+== User Deactivation ==
+User -> Gateway: POST /users/:id/deactivate
+activate Gateway
+
+Gateway -> UserService: DeactivateUser(user_id)
+activate UserService
+
+UserService -> DB: UpdateUser()\n{is_active: false, deactivated_at: now}
+activate DB
+DB --> UserService: Updated
+deactivate DB
+
+UserService -> Notify: SendDeactivationEmail(email)
+activate Notify
+Notify -> User: Account Deactivated Email
+deactivate Notify
+
+UserService --> Gateway: User Deactivated
+deactivate UserService
+
+Gateway --> User: 200 OK\n{deactivated: true}
+deactivate Gateway
+
+@enduml

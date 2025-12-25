@@ -1,0 +1,167 @@
+@startuml Profile Management
+title User Profile Management Flow
+
+actor "User" as User
+participant "API Gateway" as Gateway
+participant "User Service" as UserService
+database "MongoDB" as DB
+participant "Storage Service" as Storage
+participant "Notification Service" as Notify
+
+== Get Profile ==
+User -> Gateway: GET /api/v1/users/:id
+activate Gateway
+Gateway -> Gateway: ValidateJWT()\nExtractUserID()
+
+Gateway -> UserService: GetUser(user_id, tenant_id)
+activate UserService
+
+UserService -> DB: FindOne({_id, tenant_id})
+activate DB
+DB --> UserService: user_document
+deactivate DB
+
+UserService --> Gateway: User Profile
+deactivate UserService
+
+Gateway --> User: 200 OK\n{id, email, first_name, last_name, phone, avatar_url}
+deactivate Gateway
+
+== Update Profile (Basic Info) ==
+User -> Gateway: PUT /api/v1/users/:id\n{first_name, last_name, phone}
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nValidateOwnership()
+
+Gateway -> UserService: UpdateUser(user_id, update_data)
+activate UserService
+
+UserService -> UserService: ValidateInput()\nSanitizeData()
+
+UserService -> DB: FindOne({_id, tenant_id})
+activate DB
+DB --> UserService: existing_user
+deactivate DB
+
+UserService -> UserService: ApplyUpdates()\nPreserve audit fields
+
+UserService -> DB: UpdateOne()\n{first_name, last_name, phone, updated_at}
+activate DB
+DB --> UserService: updated_user
+deactivate DB
+
+UserService -> Notify: SendProfileUpdateEmail(email)
+activate Notify
+Notify -> User: Profile Updated Email
+deactivate Notify
+
+UserService --> Gateway: Updated Profile
+deactivate UserService
+
+Gateway --> User: 200 OK\n{updated_user}
+deactivate Gateway
+
+== Update Avatar ==
+User -> Gateway: POST /api/v1/users/:id/avatar\n[multipart/form-data: image file]
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nValidateFileType()\nValidateFileSize()
+
+Gateway -> Storage: UploadFile(file, user_id)
+activate Storage
+Storage -> Storage: GenerateUniqueFilename()\nCompressImage()
+Storage --> Gateway: avatar_url
+deactivate Storage
+
+Gateway -> UserService: UpdateUser(user_id, {avatar_url})
+activate UserService
+
+UserService -> DB: UpdateOne()\n{avatar_url, updated_at}
+activate DB
+DB --> UserService: updated
+deactivate DB
+
+UserService --> Gateway: Avatar Updated
+deactivate UserService
+
+Gateway --> User: 200 OK\n{avatar_url}
+deactivate Gateway
+
+== Update Preferences ==
+User -> Gateway: PUT /api/v1/users/:id/preferences\n{language, timezone, theme, settings}
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> UserService: UpdateUserPreferences(user_id, preferences)
+activate UserService
+
+UserService -> DB: FindOne(user_preferences, {user_id, tenant_id})
+activate DB
+DB --> UserService: existing_preferences
+deactivate DB
+
+alt Preferences Exist
+  UserService -> DB: UpdateOne()\n{language, timezone, theme, settings}
+  activate DB
+  DB --> UserService: updated
+  deactivate DB
+else No Preferences
+  UserService -> DB: InsertOne()\n{user_id, tenant_id, language, timezone, theme, settings}
+  activate DB
+  DB --> UserService: inserted
+  deactivate DB
+end
+
+UserService --> Gateway: Preferences Updated
+deactivate UserService
+
+Gateway --> User: 200 OK\n{preferences}
+deactivate Gateway
+
+== Delete Avatar ==
+User -> Gateway: DELETE /api/v1/users/:id/avatar
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> UserService: GetUser(user_id, tenant_id)
+activate UserService
+UserService -> DB: FindOne({_id, tenant_id})
+activate DB
+DB --> UserService: user
+deactivate DB
+UserService --> Gateway: {avatar_url}
+deactivate UserService
+
+Gateway -> Storage: DeleteFile(avatar_url)
+activate Storage
+Storage --> Gateway: deleted
+deactivate Storage
+
+Gateway -> UserService: UpdateUser(user_id, {avatar_url: null})
+activate UserService
+UserService -> DB: UpdateOne()\n{avatar_url: null, updated_at}
+activate DB
+DB --> UserService: updated
+deactivate DB
+UserService --> Gateway: Avatar Removed
+deactivate UserService
+
+Gateway --> User: 204 No Content
+deactivate Gateway
+
+note right of UserService
+  **Profile Validation Rules**
+  - Email: Valid format, unique per tenant
+  - Phone: Valid format (E.164)
+  - First/Last Name: 1-100 chars, no special chars
+  - Avatar: Max 5MB, JPG/PNG only
+  
+  **Audit Fields (Auto-managed)**
+  - created_at: Set on creation
+  - updated_at: Updated on every change
+  - updated_by: User who made the change
+end note
+
+@enduml

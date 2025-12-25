@@ -4,13 +4,42 @@
 
 ## Description
 
-[Add service description here]
+The User Service is a comprehensive microservice for managing user profiles, authentication data, and preferences in a multi-tenant SaaS environment. It provides robust CRUD operations, advanced search capabilities, and GDPR compliance features.
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+### User Management
+- **User CRUD Operations**: Create, read, update, and delete user profiles
+- **Multi-tenant Support**: Isolated user data per tenant with tenant-scoped operations
+- **Profile Management**: First name, last name, email, phone, and avatar
+- **User Status**: Active/inactive user status tracking
+- **Email Uniqueness**: Enforced unique email per tenant
+
+### User Search & Filtering
+- **Full-Text Search**: Search users by name, email using MongoDB text indexes
+- **Pagination**: Efficient pagination for listing and search results
+- **Advanced Filtering**: Filter users by status, tenant, and custom criteria
+
+### User Preferences
+- **Customizable Settings**: Language, timezone, theme preferences
+- **Flexible Configuration**: Store arbitrary settings as key-value pairs
+- **Per-user Preferences**: Isolated preference management per user
+
+### GDPR Compliance
+- **Right to Access**: Users can retrieve all their personal data
+- **Right to Erasure**: Soft delete with data anonymization capabilities
+- **Data Portability**: Export user data in machine-readable format
+- **Consent Management**: Track and manage user consent for data processing
+- **Data Minimization**: Store only necessary user information
+- **Privacy by Design**: Built with privacy-first architecture
+
+### Security & Privacy
+- **Input Validation**: Comprehensive validation using go-playground/validator
+- **SQL Injection Prevention**: MongoDB parameterized queries
+- **XSS Protection**: Input sanitization for all user inputs
+- **Audit Logging**: Comprehensive audit trail for all user operations
+- **Secure Data Storage**: Sensitive data encryption at rest
+- **Multi-tenant Isolation**: Strict tenant boundary enforcement
 
 ## Prerequisites
 
@@ -31,6 +60,32 @@ go mod download
 ```
 
 ## Configuration
+
+Environment variables configuration:
+
+```bash
+# Server Configuration
+USER_SERVICE_PORT=50052              # gRPC port
+USER_SERVICE_HTTP_PORT=8082          # HTTP port
+ENVIRONMENT=development              # development|staging|production
+
+# Database
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DATABASE=saas_framework
+MONGODB_MAX_POOL_SIZE=100
+MONGODB_MIN_POOL_SIZE=10
+
+# Redis (Optional)
+REDIS_URL=redis://localhost:6379/0
+REDIS_ENABLED=true
+
+# Logging
+LOG_LEVEL=info                       # debug|info|warn|error
+
+# Service Discovery
+TENANT_SERVICE_URL=localhost:50053
+NOTIFICATION_SERVICE_URL=localhost:50054
+```
 
 Copy the example environment file and update with your values:
 
@@ -90,7 +145,97 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture details.
+### Clean Architecture Pattern
+The service follows clean architecture principles with clear separation of concerns:
+
+```
+cmd/           # Application entry points
+internal/
+  ├── domain/      # Business entities and interfaces
+  ├── service/     # Business logic layer
+  ├── repository/  # Data access layer
+  ├── handler/     # HTTP request handlers
+  └── grpc/        # gRPC service implementation
+```
+
+### Technology Stack
+- **Language**: Go 1.25.5
+- **Web Framework**: Gin (HTTP) + gRPC
+- **Database**: MongoDB 4.4+
+- **Cache**: Redis 6.0+ (optional)
+- **Logging**: Uber Zap
+- **Validation**: go-playground/validator
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
+See [docs/diagrams/](docs/diagrams/) for PlantUML diagrams.
+
+## API Documentation
+
+### HTTP Endpoints
+
+#### Create User
+```http
+POST /api/v1/users
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "tenant_id": "tenant123",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "+1234567890"
+}
+```
+
+#### Get User
+```http
+GET /api/v1/users/:id
+X-Tenant-ID: tenant123
+```
+
+#### List Users
+```http
+GET /api/v1/users?page=1&page_size=20
+X-Tenant-ID: tenant123
+```
+
+#### Search Users
+```http
+GET /api/v1/users/search?query=john&page=1&page_size=20
+X-Tenant-ID: tenant123
+```
+
+#### Update User
+```http
+PUT /api/v1/users/:id
+X-Tenant-ID: tenant123
+Content-Type: application/json
+
+{
+  "first_name": "Jane",
+  "last_name": "Smith",
+  "phone": "+1987654321",
+  "avatar_url": "https://example.com/avatar.jpg"
+}
+```
+
+#### Delete User (Soft Delete)
+```http
+DELETE /api/v1/users/:id
+X-Tenant-ID: tenant123
+```
+
+### gRPC Services
+
+The service exposes gRPC endpoints for inter-service communication:
+- `UserService.CreateUser`
+- `UserService.GetUser`
+- `UserService.ListUsers`
+- `UserService.SearchUsers`
+- `UserService.UpdateUser`
+- `UserService.DeleteUser`
+
+See [proto/](proto/) for complete protobuf definitions.
 
 ## Contributing
 
