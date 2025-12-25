@@ -6,6 +6,7 @@ toolchain go1.24.11
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/vhvcorp/go-shared v0.1.0
 	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.69.2
