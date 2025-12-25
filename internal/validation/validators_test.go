@@ -211,7 +211,7 @@ func TestValidateTenantID(t *testing.T) {
 		},
 		{
 			name:     "tenant ID too long",
-			tenantID: string(make([]byte, 100)),
+			tenantID: strings.Repeat("a", 100),
 			wantErr:  true,
 		},
 	}
@@ -356,7 +356,7 @@ func TestValidateSearchQuery(t *testing.T) {
 		},
 		{
 			name:    "query too long",
-			query:   string(make([]byte, 150)),
+			query:   strings.Repeat("a", 150),
 			wantErr: true,
 		},
 	}
