@@ -2,7 +2,7 @@
 
 # Variables
 user-service := user-service
-DOCKER_REGISTRY ?= ghcr.io/longvhv
+DOCKER_REGISTRY ?= ghcr.io/vhvcorp
 VERSION ?= $(shell git describe --tags --always --dirty)
 GO_VERSION := 1.24
 

@@ -1,9 +1,9 @@
 package grpc
 
 import (
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/user-service/internal/service"
-	// pb "github.com/longvhv/saas-framework-go/services/user-service/proto"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-user-service/internal/service"
+	// pb "github.com/vhvcorp/go-user-service/proto"
 )
 
 // UserServiceServer implements the gRPC user service

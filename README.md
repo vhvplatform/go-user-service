@@ -1,4 +1,4 @@
-# saas-user-service
+# go-user-service
 
 > Part of the SaaS Framework - Extracted from monorepo
 
@@ -23,8 +23,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/longvhv/saas-user-service.git
-cd saas-user-service
+git clone https://github.com/vhvcorp/go-user-service.git
+cd go-user-service
 
 # Install dependencies
 go mod download
@@ -98,8 +98,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Related Repositories
 
-- [saas-shared-go](https://github.com/longvhv/saas-shared-go) - Shared Go libraries
-- [saas-framework-go](https://github.com/longvhv/saas-framework-go) - Original monorepo
+- [go-shared](https://github.com/vhvcorp/go-shared) - Shared Go libraries
+- [saas-framework-go](https://github.com/vhvcorp/saas-framework-go) - Original monorepo
 
 ## License
 
@@ -107,6 +107,6 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Support
 
-- Documentation: [Wiki](https://github.com/longvhv/saas-user-service/wiki)
-- Issues: [GitHub Issues](https://github.com/longvhv/saas-user-service/issues)
-- Discussions: [GitHub Discussions](https://github.com/longvhv/saas-user-service/discussions)
+- Documentation: [Wiki](https://github.com/vhvcorp/go-user-service/wiki)
+- Issues: [GitHub Issues](https://github.com/vhvcorp/go-user-service/issues)
+- Discussions: [GitHub Discussions](https://github.com/vhvcorp/go-user-service/discussions)

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package user;
 
-option go_package = "github.com/longvhv/saas-framework-go/services/user-service/proto";
+option go_package = "github.com/vhvcorp/go-user-service/proto";
 
 // UserService provides user management functionality
 service UserService {

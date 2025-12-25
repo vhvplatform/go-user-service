@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/longvhv/saas-shared-go/errors"
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/user-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/user-service/internal/repository"
+	"github.com/vhvcorp/go-shared/errors"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-user-service/internal/domain"
+	"github.com/vhvcorp/go-user-service/internal/repository"
 	"go.uber.org/zap"
 )
 
