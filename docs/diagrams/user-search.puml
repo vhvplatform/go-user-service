@@ -1,0 +1,204 @@
+@startuml User Search
+title User Search & Advanced Filtering
+
+actor "Admin/User" as User
+participant "API Gateway" as Gateway
+participant "User Service" as UserService
+database "MongoDB" as DB
+participant "Cache (Redis)" as Cache
+
+== Simple Search by Query ==
+User -> Gateway: GET /api/v1/users/search?query=john&page=1&page_size=20
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nExtractTenantID()
+
+Gateway -> UserService: SearchUsers(tenant_id, query, page, page_size)
+activate UserService
+
+UserService -> UserService: ValidatePagination()\n- page >= 1\n- page_size: 1-100 (default: 20)
+
+UserService -> UserService: SanitizeQuery()\n- Remove special chars\n- Escape regex chars
+
+UserService -> DB: Find()\nFilter: {tenant_id, $text: {$search: "john"}}\nSort: {score: {$meta: "textScore"}}\nSkip: (page-1) * page_size\nLimit: page_size
+activate DB
+
+note right of DB
+  **Text Index**
+  {
+    first_name: "text",
+    last_name: "text",
+    email: "text"
+  }
+  
+  Supports full-text search with:
+  - Word stemming
+  - Stop words removal
+  - Case insensitive
+  - Phrase matching with quotes
+end note
+
+DB --> UserService: users[], total_count
+deactivate DB
+
+UserService --> Gateway: SearchResult\n{users, total, page, page_size, total_pages}
+deactivate UserService
+
+Gateway --> User: 200 OK\n{data, pagination}
+deactivate Gateway
+
+== Advanced Filtering ==
+User -> Gateway: GET /api/v1/users?\nstatus=active\n&role=admin\n&created_after=2024-01-01\n&created_before=2024-12-31\n&sort=created_at:desc\n&page=1&page_size=20
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nExtractTenantID()
+
+Gateway -> UserService: ListUsersWithFilters(filters)
+activate UserService
+
+UserService -> UserService: BuildFilterQuery()\n{\n  tenant_id,\n  is_active: true,\n  roles: {$in: ["admin"]},\n  created_at: {\n    $gte: "2024-01-01",\n    $lte: "2024-12-31"\n  }\n}
+
+UserService -> UserService: BuildSortQuery()\n{created_at: -1}
+
+' Check cache first
+UserService -> Cache: GetCachedResult(cache_key)
+activate Cache
+Cache --> UserService: cache_miss
+deactivate Cache
+
+UserService -> DB: Aggregate()\n[\n  {$match: filters},\n  {$lookup: {roles}},\n  {$sort: sort_query},\n  {$skip: offset},\n  {$limit: page_size}\n]
+activate DB
+DB --> UserService: users[], count
+deactivate DB
+
+UserService -> Cache: CacheResult(cache_key, result, ttl: 300)
+activate Cache
+Cache --> UserService: cached
+deactivate Cache
+
+UserService --> Gateway: FilteredResult
+deactivate UserService
+
+Gateway --> User: 200 OK\n{users, pagination, filters_applied}
+deactivate Gateway
+
+== Email/Phone Exact Match ==
+User -> Gateway: GET /api/v1/users?\nemail=john.doe@example.com
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> UserService: FindUserByEmail(email, tenant_id)
+activate UserService
+
+' Check cache first
+UserService -> Cache: Get("user:email:" + email + ":" + tenant_id)
+activate Cache
+Cache --> UserService: cache_miss
+deactivate Cache
+
+UserService -> DB: FindOne()\n{email, tenant_id}
+activate DB
+
+note right of DB
+  **Indexed Fields**
+  - {email: 1, tenant_id: 1} - Unique compound
+  - {tenant_id: 1}
+  - {created_at: -1}
+  - {is_active: 1, tenant_id: 1}
+  
+  Ensures O(log n) query performance
+end note
+
+DB --> UserService: user
+deactivate DB
+
+UserService -> Cache: Set("user:email:" + email + ":" + tenant_id, user, ttl: 600)
+activate Cache
+Cache --> UserService: cached
+deactivate Cache
+
+UserService --> Gateway: User Found
+deactivate UserService
+
+Gateway --> User: 200 OK\n{user}
+deactivate Gateway
+
+== Autocomplete Search ==
+User -> Gateway: GET /api/v1/users/autocomplete?q=joh&limit=10
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> UserService: AutocompleteUsers(query, tenant_id, limit)
+activate UserService
+
+UserService -> Cache: Get("autocomplete:" + query + ":" + tenant_id)
+activate Cache
+Cache --> UserService: cache_miss
+deactivate Cache
+
+UserService -> DB: Find()\n{\n  tenant_id,\n  $or: [\n    {first_name: {$regex: "^joh", $options: "i"}},\n    {last_name: {$regex: "^joh", $options: "i"}},\n    {email: {$regex: "^joh", $options: "i"}}\n  ]\n}\nLimit: 10\nProjection: {first_name, last_name, email, avatar_url}
+activate DB
+DB --> UserService: suggestions[]
+deactivate DB
+
+UserService -> Cache: Set("autocomplete:" + query, suggestions, ttl: 300)
+activate Cache
+Cache --> UserService: cached
+deactivate Cache
+
+UserService --> Gateway: Suggestions
+deactivate UserService
+
+Gateway --> User: 200 OK\n[{id, name, email, avatar}]
+deactivate Gateway
+
+== Export Search Results ==
+User -> Gateway: POST /api/v1/users/export\n{filters, format: "csv"}
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nCheckPermission("users:export")
+
+Gateway -> UserService: ExportUsers(filters, format)
+activate UserService
+
+UserService -> DB: Find(filters)\nNo Limit (Stream)
+activate DB
+DB --> UserService: user_cursor
+deactivate DB
+
+UserService -> UserService: StreamToCSV()\nConvert each user to CSV row\nInclude headers
+
+UserService --> Gateway: CSV Stream
+deactivate UserService
+
+Gateway --> User: 200 OK\nContent-Type: text/csv\nContent-Disposition: attachment; filename="users.csv"
+deactivate Gateway
+
+note bottom of UserService
+  **Search Performance Optimization**
+  1. Text indexes for full-text search
+  2. Compound indexes for common filters
+  3. Redis caching for frequent queries
+  4. Query result pagination
+  5. Projection to reduce data transfer
+  6. Aggregation pipeline for complex queries
+  
+  **Supported Filters**
+  - status: active|inactive
+  - role: role_name (requires join)
+  - created_after/before: date range
+  - email: exact match
+  - phone: exact match
+  - query: full-text search
+  - sort: field:asc|desc
+  
+  **Cache Strategy**
+  - Autocomplete: 5 min TTL
+  - Email/phone lookup: 10 min TTL
+  - Search results: 5 min TTL
+  - Invalidate on user update/delete
+end note
+
+@enduml

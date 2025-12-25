@@ -1,0 +1,295 @@
+@startuml GDPR Compliance
+title GDPR Compliance - Data Rights & Privacy
+
+actor "User/Data Subject" as User
+participant "API Gateway" as Gateway
+participant "User Service" as UserService
+participant "GDPR Service" as GDPR
+database "MongoDB" as DB
+participant "Storage Service" as Storage
+participant "Notification Service" as Notify
+queue "Export Queue" as Queue
+participant "Audit Log" as Audit
+
+== Right to Access (Data Export) ==
+User -> Gateway: POST /api/v1/gdpr/export-data
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nExtractUserID()
+
+Gateway -> GDPR: RequestDataExport(user_id, tenant_id)
+activate GDPR
+
+GDPR -> GDPR: GenerateExportRequestID()\nCreateExportJob()
+
+GDPR -> Queue: Enqueue(export_job)
+activate Queue
+Queue --> GDPR: job_queued
+deactivate Queue
+
+GDPR -> Audit: LogDataAccessRequest(user_id, timestamp)
+activate Audit
+Audit --> GDPR: logged
+deactivate Audit
+
+GDPR --> Gateway: Export Request Accepted
+deactivate GDPR
+
+Gateway --> User: 202 Accepted\n{request_id, status: "processing"}
+deactivate Gateway
+
+== Data Export Processing (Background) ==
+Queue -> GDPR: ProcessExportJob(job_id)
+activate GDPR
+
+GDPR -> UserService: GetUserData(user_id)
+activate UserService
+UserService -> DB: FindUser({_id: user_id})
+activate DB
+DB --> UserService: user_profile
+deactivate DB
+UserService --> GDPR: user_data
+deactivate UserService
+
+GDPR -> DB: FindUserPreferences({user_id})
+activate DB
+DB --> GDPR: preferences
+deactivate DB
+
+GDPR -> DB: FindUserConsents({user_id})
+activate DB
+DB --> GDPR: consents
+deactivate DB
+
+GDPR -> DB: FindUserActivity({user_id})
+activate DB
+DB --> GDPR: activity_logs
+deactivate DB
+
+GDPR -> GDPR: AggregateAllUserData()\n{\n  profile,\n  preferences,\n  consents,\n  activity,\n  metadata\n}
+
+GDPR -> GDPR: GenerateExportFile()\nFormat: JSON or ZIP
+
+GDPR -> Storage: UploadExportFile(file, user_id)
+activate Storage
+Storage --> GDPR: download_url (expires_in: 7 days)
+deactivate Storage
+
+GDPR -> Notify: SendDataExportReadyEmail(user_email, download_url)
+activate Notify
+Notify -> User: Data Export Ready Email\n{download_link, expires_at}
+deactivate Notify
+
+GDPR -> Audit: LogDataExportCompleted(user_id, timestamp)
+activate Audit
+Audit --> GDPR: logged
+deactivate Audit
+
+deactivate GDPR
+
+== Right to Be Forgotten (Data Deletion) ==
+User -> Gateway: POST /api/v1/gdpr/delete-account
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nRequire2FA()
+
+Gateway -> GDPR: RequestAccountDeletion(user_id, tenant_id)
+activate GDPR
+
+GDPR -> GDPR: CreateDeletionRequest()\n- Status: pending\n- Grace period: 30 days\n- Can be cancelled
+
+GDPR -> DB: InsertDeletionRequest()\n{user_id, requested_at, scheduled_for: +30 days}
+activate DB
+DB --> GDPR: request_id
+deactivate DB
+
+GDPR -> Notify: SendDeletionConfirmationEmail(user_email, cancellation_link)
+activate Notify
+Notify -> User: Account Deletion Scheduled Email\n{grace_period: 30 days, cancel_link}
+deactivate Notify
+
+GDPR -> Audit: LogDeletionRequest(user_id, timestamp)
+activate Audit
+Audit --> GDPR: logged
+deactivate Audit
+
+GDPR --> Gateway: Deletion Request Created
+deactivate GDPR
+
+Gateway --> User: 200 OK\n{request_id, scheduled_for, grace_period}
+deactivate Gateway
+
+== Data Deletion Processing (After Grace Period) ==
+GDPR -> GDPR: ProcessScheduledDeletions()
+activate GDPR
+
+GDPR -> DB: FindPendingDeletions()\n{status: "pending", scheduled_for: <= now}
+activate DB
+DB --> GDPR: deletion_requests[]
+deactivate DB
+
+loop For each deletion request
+  GDPR -> GDPR: AnonymizeUserData(user_id)
+  
+  GDPR -> DB: UpdateUser(user_id)\n{\n  email: "deleted_" + hash,\n  first_name: "[DELETED]",\n  last_name: "[DELETED]",\n  phone: null,\n  avatar_url: null,\n  is_deleted: true,\n  deleted_at: now\n}
+  activate DB
+  DB --> GDPR: anonymized
+  deactivate DB
+  
+  GDPR -> DB: DeleteUserPreferences({user_id})
+  activate DB
+  DB --> GDPR: deleted
+  deactivate DB
+  
+  GDPR -> Storage: DeleteUserFiles(user_id)
+  activate Storage
+  Storage --> GDPR: deleted
+  deactivate Storage
+  
+  GDPR -> DB: AnonymizeAuditLogs(user_id)\n- Keep for compliance\n- Remove PII
+  activate DB
+  DB --> GDPR: anonymized
+  deactivate DB
+  
+  GDPR -> Audit: LogDataDeletion(user_id, timestamp)
+  activate Audit
+  Audit --> GDPR: logged
+  deactivate Audit
+end
+
+GDPR -> Notify: SendDeletionCompletedEmail(user_email)
+activate Notify
+Notify -> User: Account Deleted Email
+deactivate Notify
+
+deactivate GDPR
+
+== Consent Management ==
+User -> Gateway: POST /api/v1/gdpr/consent\n{purpose: "marketing", granted: true}
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> GDPR: UpdateConsent(user_id, purpose, granted)
+activate GDPR
+
+GDPR -> DB: UpsertConsent()\n{\n  user_id,\n  tenant_id,\n  purpose: "marketing",\n  granted: true,\n  granted_at: now,\n  ip_address,\n  user_agent\n}
+activate DB
+DB --> GDPR: consent_saved
+deactivate DB
+
+GDPR -> Audit: LogConsentChange(user_id, purpose, granted)
+activate Audit
+Audit --> GDPR: logged
+deactivate Audit
+
+GDPR --> Gateway: Consent Updated
+deactivate GDPR
+
+Gateway --> User: 200 OK\n{consent_updated: true}
+deactivate Gateway
+
+== Data Portability ==
+User -> Gateway: GET /api/v1/gdpr/export-data/:request_id
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()\nValidateOwnership()
+
+Gateway -> GDPR: GetExportStatus(request_id, user_id)
+activate GDPR
+
+GDPR -> DB: FindExportRequest({_id: request_id, user_id})
+activate DB
+DB --> GDPR: export_request
+deactivate DB
+
+alt Export Ready
+  GDPR -> Storage: GetDownloadURL(file_path)
+  activate Storage
+  Storage --> GDPR: download_url
+  deactivate Storage
+  
+  GDPR --> Gateway: Export Ready\n{status: "completed", download_url, expires_at}
+  Gateway --> User: 200 OK\nRedirect to download_url
+else Export Processing
+  GDPR --> Gateway: Export Processing\n{status: "processing", progress: "65%"}
+  Gateway --> User: 200 OK\n{status: "processing"}
+end
+
+deactivate GDPR
+deactivate Gateway
+
+== Cancel Deletion Request ==
+User -> Gateway: POST /api/v1/gdpr/cancel-deletion/:request_id
+activate Gateway
+
+Gateway -> Gateway: ValidateJWT()
+
+Gateway -> GDPR: CancelDeletion(request_id, user_id)
+activate GDPR
+
+GDPR -> DB: UpdateDeletionRequest()\n{status: "cancelled", cancelled_at: now}
+activate DB
+DB --> GDPR: updated
+deactivate DB
+
+GDPR -> Notify: SendDeletionCancelledEmail(user_email)
+activate Notify
+Notify -> User: Deletion Cancelled Email
+deactivate Notify
+
+GDPR -> Audit: LogDeletionCancelled(user_id, request_id)
+activate Audit
+Audit --> GDPR: logged
+deactivate Audit
+
+GDPR --> Gateway: Deletion Cancelled
+deactivate GDPR
+
+Gateway --> User: 200 OK\n{cancelled: true}
+deactivate Gateway
+
+note bottom of GDPR
+  **GDPR Requirements Implemented**
+  
+  **1. Right to Access (Art. 15)**
+  - Export all personal data
+  - Machine-readable format (JSON)
+  - Within 30 days
+  
+  **2. Right to Erasure (Art. 17)**
+  - Delete/anonymize personal data
+  - 30-day grace period
+  - Retain compliance logs
+  
+  **3. Data Portability (Art. 20)**
+  - Structured data export
+  - Common format (JSON/CSV)
+  - Direct download
+  
+  **4. Consent Management (Art. 7)**
+  - Explicit consent tracking
+  - Purpose-specific consent
+  - Easy withdrawal
+  - Audit trail
+  
+  **5. Data Minimization (Art. 5)**
+  - Only necessary data stored
+  - Regular data cleanup
+  - Retention policies
+  
+  **6. Privacy by Design (Art. 25)**
+  - Privacy-first architecture
+  - Default secure settings
+  - Encryption at rest
+  - Audit logging
+  
+  **Retention Policy**
+  - Active users: Indefinite
+  - Inactive users: 2 years
+  - Deleted users: Anonymized immediately
+  - Audit logs: 7 years (compliance)
+  - Export files: 7 days
+end note
+
+@enduml
