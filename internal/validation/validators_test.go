@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -47,7 +48,7 @@ func TestValidateEmail(t *testing.T) {
 		},
 		{
 			name:    "too long email",
-			email:   string(make([]byte, 300)) + "@example.com",
+			email:   strings.Repeat("a", 300) + "@example.com",
 			wantErr: true,
 		},
 	}
@@ -113,7 +114,7 @@ func TestValidateName(t *testing.T) {
 		},
 		{
 			name:      "name too long",
-			nameValue: string(make([]byte, 150)),
+			nameValue: strings.Repeat("a", 150),
 			fieldName: "first_name",
 			wantErr:   true,
 		},
