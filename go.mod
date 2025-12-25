@@ -1,15 +1,15 @@
 module github.com/vhvcorp/go-user-service
 
-go 1.24.0
+go 1.25.5
 
-toolchain go1.24.11
+toolchain go1.25.5
 
 require (
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.11.0
 	github.com/vhvcorp/go-shared v0.1.0
-	go.mongodb.org/mongo-driver v1.17.3
-	go.uber.org/zap v1.27.0
-	google.golang.org/grpc v1.69.2
+	go.mongodb.org/mongo-driver v1.17.6
+	go.uber.org/zap v1.27.1
+	google.golang.org/grpc v1.78.0
 )
 
 require (
@@ -49,7 +49,7 @@ require (
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
