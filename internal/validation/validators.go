@@ -94,8 +94,9 @@ func ValidateTenantID(tenantID string) error {
 	if tenantID == "" {
 		return fmt.Errorf("tenant_id is required")
 	}
-	if len(tenantID) < 1 || len(tenantID) > 50 {
-		return fmt.Errorf("tenant_id must be between 1 and 50 characters")
+	// Aligned with middleware validation (3-128 characters)
+	if len(tenantID) < 3 || len(tenantID) > 128 {
+		return fmt.Errorf("tenant_id must be between 3 and 128 characters")
 	}
 
 	// Tenant ID should be alphanumeric with hyphens and underscores

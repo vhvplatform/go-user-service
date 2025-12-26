@@ -35,6 +35,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Override tenant ID from middleware (header takes precedence)
+	req.TenantID = middleware.MustGetTenantID(c)
+
 	user, err := h.userService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		h.respondError(c, err)

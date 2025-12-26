@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +39,7 @@ func TestTenancyMiddleware(t *testing.T) {
 		},
 		{
 			name:           "tenant ID too long",
-			tenantID:       string(make([]byte, 129)),
+			tenantID:       strings.Repeat("a", 129),
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  true,
 		},
@@ -50,7 +51,7 @@ func TestTenancyMiddleware(t *testing.T) {
 		},
 		{
 			name:           "valid maximum length",
-			tenantID:       string(make([]byte, 128)),
+			tenantID:       strings.Repeat("a", 128),
 			expectedStatus: http.StatusOK,
 			expectedError:  false,
 		},

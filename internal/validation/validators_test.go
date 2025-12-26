@@ -211,8 +211,23 @@ func TestValidateTenantID(t *testing.T) {
 		},
 		{
 			name:     "tenant ID too long",
-			tenantID: strings.Repeat("a", 100),
+			tenantID: strings.Repeat("a", 129), // Updated to 129 (over limit of 128)
 			wantErr:  true,
+		},
+		{
+			name:     "tenant ID too short",
+			tenantID: "ab", // 2 characters (under minimum of 3)
+			wantErr:  true,
+		},
+		{
+			name:     "valid minimum length",
+			tenantID: "abc", // Exactly 3 characters
+			wantErr:  false,
+		},
+		{
+			name:     "valid maximum length",
+			tenantID: strings.Repeat("a", 128), // Exactly 128 characters
+			wantErr:  false,
 		},
 	}
 
