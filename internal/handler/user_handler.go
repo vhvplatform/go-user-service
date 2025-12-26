@@ -8,6 +8,7 @@ import (
 	"github.com/vhvplatform/go-shared/errors"
 	"github.com/vhvplatform/go-shared/logger"
 	"github.com/vhvplatform/go-user-service/internal/domain"
+	"github.com/vhvplatform/go-user-service/internal/middleware"
 	"github.com/vhvplatform/go-user-service/internal/service"
 	"go.uber.org/zap"
 )
@@ -46,7 +47,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // GetUser handles getting a user by ID
 func (h *UserHandler) GetUser(c *gin.Context) {
 	userID := c.Param("id")
-	tenantID := c.GetString("tenant_id")
+	tenantID := middleware.MustGetTenantID(c)
 
 	user, err := h.userService.GetUser(c.Request.Context(), userID, tenantID)
 	if err != nil {
@@ -59,7 +60,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 // ListUsers handles listing users
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	tenantID := c.GetString("tenant_id")
+	tenantID := middleware.MustGetTenantID(c)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -87,7 +88,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 // SearchUsers handles searching users
 func (h *UserHandler) SearchUsers(c *gin.Context) {
-	tenantID := c.GetString("tenant_id")
+	tenantID := middleware.MustGetTenantID(c)
 	query := c.Query("q")
 
 	if query == "" {
@@ -122,7 +123,7 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 // UpdateUser handles updating a user
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
-	tenantID := c.GetString("tenant_id")
+	tenantID := middleware.MustGetTenantID(c)
 
 	var req domain.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -142,7 +143,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // DeleteUser handles deleting a user
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
-	tenantID := c.GetString("tenant_id")
+	tenantID := middleware.MustGetTenantID(c)
 
 	if err := h.userService.DeleteUser(c.Request.Context(), userID, tenantID); err != nil {
 		h.respondError(c, err)

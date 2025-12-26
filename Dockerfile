@@ -6,22 +6,16 @@ WORKDIR /app
 # Install dependencies
 RUN apk add --no-cache git
 
-# Copy go.work and modules
-COPY go.work go.work
-COPY pkg/go.mod pkg/go.sum pkg/
-COPY services/user-service/go.mod services/user-service/go.sum services/user-service/
+# Copy go mod files
+COPY go.mod go.sum ./
 
 # Download dependencies
-WORKDIR /app/services/user-service
 RUN go mod download
 
 # Copy source code
-WORKDIR /app
-COPY pkg/ pkg/
-COPY services/user-service/ services/user-service/
+COPY . .
 
 # Build the application
-WORKDIR /app/services/user-service
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bin/user-service ./cmd/main.go
 
 # Final stage
