@@ -16,6 +16,7 @@ import (
 	"github.com/vhvplatform/go-shared/mongodb"
 	"github.com/vhvplatform/go-user-service/internal/grpc"
 	"github.com/vhvplatform/go-user-service/internal/handler"
+	"github.com/vhvplatform/go-user-service/internal/middleware"
 	"github.com/vhvplatform/go-user-service/internal/repository"
 	"github.com/vhvplatform/go-user-service/internal/service"
 	// pb "github.com/vhvplatform/go-user-service/proto"
@@ -115,7 +116,9 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	// API routes
 	v1 := router.Group("/api/v1")
 	{
+		// Tenant-aware user routes
 		users := v1.Group("/users")
+		users.Use(middleware.TenancyMiddleware())
 		{
 			users.POST("", userHandler.CreateUser)
 			users.GET("", userHandler.ListUsers)

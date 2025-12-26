@@ -1,6 +1,8 @@
 # go-user-service
 
 > Part of the SaaS Framework - Extracted from monorepo
+> 
+> **Conforms to**: [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) architectural standards
 
 ## Description
 
@@ -39,7 +41,25 @@ The User Service is a comprehensive microservice for managing user profiles, aut
 - **XSS Protection**: Input sanitization for all user inputs
 - **Audit Logging**: Comprehensive audit trail for all user operations
 - **Secure Data Storage**: Sensitive data encryption at rest
-- **Multi-tenant Isolation**: Strict tenant boundary enforcement
+- **Multi-tenant Isolation**: Strict tenant boundary enforcement with X-Tenant-ID header validation
+
+## Architecture
+
+This service conforms to the [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) architectural standards for hybrid multi-tenant SaaS applications.
+
+### Tenancy Middleware
+
+All API endpoints require the `X-Tenant-ID` header for tenant isolation:
+
+```bash
+curl -H "X-Tenant-ID: tenant-123" http://localhost:8082/api/v1/users
+```
+
+The service integrates with go-infrastructure's hybrid routing patterns:
+- **Pattern A**: Subfolder routing (`saas.com/{tenant}/api/*`)
+- **Pattern B**: Custom domain routing (`customer.com/api/*`)
+
+See [ARCHITECTURAL_CONFORMANCE.md](docs/ARCHITECTURAL_CONFORMANCE.md) for detailed information.
 
 ## Prerequisites
 

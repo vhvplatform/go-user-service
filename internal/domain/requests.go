@@ -3,7 +3,7 @@ package domain
 // CreateUserRequest represents a user creation request
 type CreateUserRequest struct {
 	Email     string `json:"email" binding:"required,email"`
-	TenantID  string `json:"tenant_id" binding:"required"`
+	TenantID  string `json:"tenant_id"` // Injected from X-Tenant-ID header by middleware
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
