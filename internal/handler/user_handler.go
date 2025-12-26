@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-shared/errors"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-user-service/internal/domain"
-	"github.com/vhvcorp/go-user-service/internal/service"
+	"github.com/vhvplatform/go-shared/errors"
+	"github.com/vhvplatform/go-shared/logger"
+	"github.com/vhvplatform/go-user-service/internal/domain"
+	"github.com/vhvplatform/go-user-service/internal/service"
 	"go.uber.org/zap"
 )
 
@@ -33,13 +33,13 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		h.respondError(c, errors.BadRequest("Invalid request body"))
 		return
 	}
-	
+
 	user, err := h.userService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, gin.H{"data": h.toUserResponse(user)})
 }
 
@@ -47,34 +47,34 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 func (h *UserHandler) GetUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := c.GetString("tenant_id")
-	
+
 	user, err := h.userService.GetUser(c.Request.Context(), userID, tenantID)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
 }
 
 // ListUsers handles listing users
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	tenantID := c.GetString("tenant_id")
-	
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	
+
 	users, total, err := h.userService.ListUsers(c.Request.Context(), tenantID, page, pageSize)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	userResponses := make([]domain.UserResponse, len(users))
 	for i, user := range users {
 		userResponses[i] = h.toUserResponse(user)
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": domain.ListUsersResponse{
 			Users:    userResponses,
@@ -89,26 +89,26 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 func (h *UserHandler) SearchUsers(c *gin.Context) {
 	tenantID := c.GetString("tenant_id")
 	query := c.Query("q")
-	
+
 	if query == "" {
 		h.respondError(c, errors.BadRequest("Query parameter 'q' is required"))
 		return
 	}
-	
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	
+
 	users, total, err := h.userService.SearchUsers(c.Request.Context(), tenantID, query, page, pageSize)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	userResponses := make([]domain.UserResponse, len(users))
 	for i, user := range users {
 		userResponses[i] = h.toUserResponse(user)
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": domain.ListUsersResponse{
 			Users:    userResponses,
@@ -123,19 +123,19 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := c.GetString("tenant_id")
-	
+
 	var req domain.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.respondError(c, errors.BadRequest("Invalid request body"))
 		return
 	}
-	
+
 	user, err := h.userService.UpdateUser(c.Request.Context(), userID, tenantID, &req)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
 }
 
@@ -143,12 +143,12 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := c.GetString("tenant_id")
-	
+
 	if err := h.userService.DeleteUser(c.Request.Context(), userID, tenantID); err != nil {
 		h.respondError(c, err)
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
@@ -171,7 +171,7 @@ func (h *UserHandler) toUserResponse(user *domain.User) domain.UserResponse {
 // respondError responds with an error
 func (h *UserHandler) respondError(c *gin.Context, err error) {
 	appErr := errors.FromError(err)
-	h.logger.Error("Request failed", 
+	h.logger.Error("Request failed",
 		zap.String("path", c.Request.URL.Path),
 		zap.String("method", c.Request.Method),
 		zap.String("error", appErr.Message),

@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/vhvcorp/go-shared/errors"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-user-service/internal/domain"
-	"github.com/vhvcorp/go-user-service/internal/repository"
-	"github.com/vhvcorp/go-user-service/internal/validation"
+	"github.com/vhvplatform/go-shared/errors"
+	"github.com/vhvplatform/go-shared/logger"
+	"github.com/vhvplatform/go-user-service/internal/domain"
+	"github.com/vhvplatform/go-user-service/internal/repository"
+	"github.com/vhvplatform/go-user-service/internal/validation"
 	"go.uber.org/zap"
 )
 
@@ -31,29 +31,29 @@ func (s *UserService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 	if err := validation.ValidateEmail(req.Email); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	if err := validation.ValidateTenantID(req.TenantID); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	if req.FirstName != "" {
 		if err := validation.ValidateName(req.FirstName, "first_name"); err != nil {
 			return nil, errors.BadRequest(err.Error())
 		}
 		req.FirstName = validation.SanitizeName(req.FirstName)
 	}
-	
+
 	if req.LastName != "" {
 		if err := validation.ValidateName(req.LastName, "last_name"); err != nil {
 			return nil, errors.BadRequest(err.Error())
 		}
 		req.LastName = validation.SanitizeName(req.LastName)
 	}
-	
+
 	if err := validation.ValidatePhone(req.Phone); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	// Check if user already exists
 	existingUser, err := s.userRepo.FindByEmail(ctx, req.Email, req.TenantID)
 	if err != nil {
@@ -63,7 +63,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 	if existingUser != nil {
 		return nil, errors.Conflict("User already exists with this email")
 	}
-	
+
 	// Create user
 	user := &domain.User{
 		Email:     req.Email,
@@ -73,18 +73,18 @@ func (s *UserService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 		Phone:     req.Phone,
 		IsActive:  true,
 	}
-	
+
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		s.logger.Error("Failed to create user", zap.Error(err))
 		return nil, errors.Internal("Failed to create user")
 	}
-	
-	s.logger.Info("User created successfully", 
+
+	s.logger.Info("User created successfully",
 		zap.String("user_id", user.ID.Hex()),
 		zap.String("email", user.Email),
 		zap.String("tenant_id", user.TenantID),
 	)
-	
+
 	return user, nil
 }
 
@@ -94,11 +94,11 @@ func (s *UserService) GetUser(ctx context.Context, id, tenantID string) (*domain
 	if err := validation.ValidateObjectID(id); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	if err := validation.ValidateTenantID(tenantID); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	user, err := s.userRepo.FindByID(ctx, id, tenantID)
 	if err != nil {
 		s.logger.Error("Failed to get user", zap.String("user_id", id), zap.Error(err))
@@ -116,9 +116,9 @@ func (s *UserService) ListUsers(ctx context.Context, tenantID string, page, page
 	if err := validation.ValidateTenantID(tenantID); err != nil {
 		return nil, 0, errors.BadRequest(err.Error())
 	}
-	
+
 	page, pageSize, _ = validation.ValidatePagination(page, pageSize)
-	
+
 	users, total, err := s.userRepo.List(ctx, tenantID, page, pageSize)
 	if err != nil {
 		s.logger.Error("Failed to list users", zap.Error(err))
@@ -133,16 +133,16 @@ func (s *UserService) SearchUsers(ctx context.Context, tenantID, query string, p
 	if err := validation.ValidateTenantID(tenantID); err != nil {
 		return nil, 0, errors.BadRequest(err.Error())
 	}
-	
+
 	if err := validation.ValidateSearchQuery(query); err != nil {
 		return nil, 0, errors.BadRequest(err.Error())
 	}
-	
+
 	// Sanitize query to prevent injection
 	query = validation.SanitizeString(query)
-	
+
 	page, pageSize, _ = validation.ValidatePagination(page, pageSize)
-	
+
 	users, total, err := s.userRepo.Search(ctx, tenantID, query, page, pageSize)
 	if err != nil {
 		s.logger.Error("Failed to search users", zap.Error(err))
@@ -157,11 +157,11 @@ func (s *UserService) UpdateUser(ctx context.Context, id, tenantID string, req *
 	if err := validation.ValidateObjectID(id); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	if err := validation.ValidateTenantID(tenantID); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	// Validate and sanitize update fields
 	if req.FirstName != "" {
 		if err := validation.ValidateName(req.FirstName, "first_name"); err != nil {
@@ -169,22 +169,22 @@ func (s *UserService) UpdateUser(ctx context.Context, id, tenantID string, req *
 		}
 		req.FirstName = validation.SanitizeName(req.FirstName)
 	}
-	
+
 	if req.LastName != "" {
 		if err := validation.ValidateName(req.LastName, "last_name"); err != nil {
 			return nil, errors.BadRequest(err.Error())
 		}
 		req.LastName = validation.SanitizeName(req.LastName)
 	}
-	
+
 	if err := validation.ValidatePhone(req.Phone); err != nil {
 		return nil, errors.BadRequest(err.Error())
 	}
-	
+
 	if req.AvatarURL != "" {
 		req.AvatarURL = validation.SanitizeString(req.AvatarURL)
 	}
-	
+
 	// Get existing user
 	user, err := s.userRepo.FindByID(ctx, id, tenantID)
 	if err != nil {
@@ -194,7 +194,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id, tenantID string, req *
 	if user == nil {
 		return nil, errors.NotFound("User not found")
 	}
-	
+
 	// Update fields
 	if req.FirstName != "" {
 		user.FirstName = req.FirstName
@@ -208,16 +208,16 @@ func (s *UserService) UpdateUser(ctx context.Context, id, tenantID string, req *
 	if req.AvatarURL != "" {
 		user.AvatarURL = req.AvatarURL
 	}
-	
+
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update user", zap.Error(err))
 		return nil, errors.Internal("Failed to update user")
 	}
-	
-	s.logger.Info("User updated successfully", 
+
+	s.logger.Info("User updated successfully",
 		zap.String("user_id", user.ID.Hex()),
 	)
-	
+
 	return user, nil
 }
 
@@ -227,11 +227,11 @@ func (s *UserService) DeleteUser(ctx context.Context, id, tenantID string) error
 	if err := validation.ValidateObjectID(id); err != nil {
 		return errors.BadRequest(err.Error())
 	}
-	
+
 	if err := validation.ValidateTenantID(tenantID); err != nil {
 		return errors.BadRequest(err.Error())
 	}
-	
+
 	// Check if user exists
 	user, err := s.userRepo.FindByID(ctx, id, tenantID)
 	if err != nil {
@@ -241,15 +241,15 @@ func (s *UserService) DeleteUser(ctx context.Context, id, tenantID string) error
 	if user == nil {
 		return errors.NotFound("User not found")
 	}
-	
+
 	if err := s.userRepo.Delete(ctx, id, tenantID); err != nil {
 		s.logger.Error("Failed to delete user", zap.Error(err))
 		return errors.Internal("Failed to delete user")
 	}
-	
-	s.logger.Info("User deleted successfully", 
+
+	s.logger.Info("User deleted successfully",
 		zap.String("user_id", id),
 	)
-	
+
 	return nil
 }

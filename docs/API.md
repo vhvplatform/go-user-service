@@ -371,7 +371,7 @@ message ListUsersResponse {
 import (
     "context"
     "google.golang.org/grpc"
-    pb "github.com/vhvcorp/go-user-service/proto"
+    pb "github.com/vhvplatform/go-user-service/proto"
 )
 
 // Connect to service
@@ -612,9 +612,9 @@ Future versions will be released as `/api/v2/...`, maintaining backward compatib
 ## Support
 
 For API support or questions:
-- Email: api-support@vhvcorp.com
-- Documentation: https://docs.vhvcorp.com/user-service
-- GitHub Issues: https://github.com/vhvcorp/go-user-service/issues
+- Email: api-support@vhvplatform.com
+- Documentation: https://docs.vhvplatform.com/user-service
+- GitHub Issues: https://github.com/vhvplatform/go-user-service/issues
 
 ---
 

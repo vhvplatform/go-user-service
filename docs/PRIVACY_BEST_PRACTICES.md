@@ -506,7 +506,7 @@ var USTransfer = DataTransfer{
 - Object to processing
 
 ## Contact us
-privacy@vhvcorp.com
+privacy@vhvplatform.com
 ```
 
 ### Clear Privacy Policy

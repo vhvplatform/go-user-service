@@ -1,9 +1,9 @@
 package grpc
 
 import (
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-user-service/internal/service"
-	// pb "github.com/vhvcorp/go-user-service/proto"
+	"github.com/vhvplatform/go-shared/logger"
+	"github.com/vhvplatform/go-user-service/internal/service"
+	// pb "github.com/vhvplatform/go-user-service/proto"
 )
 
 // UserServiceServer implements the gRPC user service
@@ -32,7 +32,7 @@ func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.GetUserRequest)
 		s.logger.Error("Failed to get user", zap.Error(err))
 		return nil, err
 	}
-	
+
 	return &pb.GetUserResponse{
 		User: s.toProtoUser(user),
 	}, nil
@@ -42,18 +42,18 @@ func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.GetUserRequest)
 func (s *UserServiceServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
 	page := int(req.Page)
 	pageSize := int(req.PageSize)
-	
+
 	users, total, err := s.userService.ListUsers(ctx, req.TenantId, page, pageSize)
 	if err != nil {
 		s.logger.Error("Failed to list users", zap.Error(err))
 		return nil, err
 	}
-	
+
 	protoUsers := make([]*pb.User, len(users))
 	for i, user := range users {
 		protoUsers[i] = s.toProtoUser(user)
 	}
-	
+
 	return &pb.ListUsersResponse{
 		Users:    protoUsers,
 		Total:    int32(total),
@@ -70,13 +70,13 @@ func (s *UserServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRe
 		Phone:     req.Phone,
 		AvatarURL: req.AvatarUrl,
 	}
-	
+
 	user, err := s.userService.UpdateUser(ctx, req.UserId, req.TenantId, updateReq)
 	if err != nil {
 		s.logger.Error("Failed to update user", zap.Error(err))
 		return nil, err
 	}
-	
+
 	return &pb.UpdateUserResponse{
 		User: s.toProtoUser(user),
 	}, nil
@@ -89,7 +89,7 @@ func (s *UserServiceServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRe
 		s.logger.Error("Failed to delete user", zap.Error(err))
 		return nil, err
 	}
-	
+
 	return &pb.DeleteUserResponse{
 		Success: true,
 	}, nil
@@ -99,18 +99,18 @@ func (s *UserServiceServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRe
 func (s *UserServiceServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error) {
 	page := int(req.Page)
 	pageSize := int(req.PageSize)
-	
+
 	users, total, err := s.userService.SearchUsers(ctx, req.TenantId, req.Query, page, pageSize)
 	if err != nil {
 		s.logger.Error("Failed to search users", zap.Error(err))
 		return nil, err
 	}
-	
+
 	protoUsers := make([]*pb.User, len(users))
 	for i, user := range users {
 		protoUsers[i] = s.toProtoUser(user)
 	}
-	
+
 	return &pb.SearchUsersResponse{
 		Users: protoUsers,
 		Total: int32(total),

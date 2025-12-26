@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vhvcorp/go-user-service/internal/domain"
+	"github.com/vhvplatform/go-user-service/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,11 +20,11 @@ type UserRepository struct {
 // NewUserRepository creates a new user repository
 func NewUserRepository(db *mongo.Database) *UserRepository {
 	collection := db.Collection("users")
-	
+
 	// Create indexes
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -47,9 +47,9 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 			},
 		},
 	}
-	
+
 	_, _ = collection.Indexes().CreateMany(ctx, indexes)
-	
+
 	return &UserRepository{collection: collection}
 }
 
@@ -58,12 +58,12 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 	user.IsActive = true
-	
+
 	result, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
-	
+
 	user.ID = result.InsertedID.(primitive.ObjectID)
 	return nil
 }
@@ -74,7 +74,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id, tenantID string) (*do
 	if err != nil {
 		return nil, fmt.Errorf("invalid user ID: %w", err)
 	}
-	
+
 	var user domain.User
 	err = r.collection.FindOne(ctx, bson.M{
 		"_id":       objectID,
@@ -113,34 +113,34 @@ func (r *UserRepository) List(ctx context.Context, tenantID string, page, pageSi
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	
+
 	skip := (page - 1) * pageSize
-	
+
 	filter := bson.M{"tenant_id": tenantID}
-	
+
 	// Get total count
 	total, err := r.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
-	
+
 	// Get users
 	opts := options.Find().
 		SetSkip(int64(skip)).
 		SetLimit(int64(pageSize)).
 		SetSort(bson.D{{Key: "created_at", Value: -1}})
-	
+
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}
 	defer cursor.Close(ctx)
-	
+
 	var users []*domain.User
 	if err := cursor.All(ctx, &users); err != nil {
 		return nil, 0, fmt.Errorf("failed to decode users: %w", err)
 	}
-	
+
 	return users, total, nil
 }
 
@@ -152,43 +152,43 @@ func (r *UserRepository) Search(ctx context.Context, tenantID, query string, pag
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	
+
 	skip := (page - 1) * pageSize
-	
+
 	filter := bson.M{
 		"tenant_id": tenantID,
 		"$text":     bson.M{"$search": query},
 	}
-	
+
 	// Get total count
 	total, err := r.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
-	
+
 	// Get users
 	opts := options.Find().
 		SetSkip(int64(skip)).
 		SetLimit(int64(pageSize))
-	
+
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to search users: %w", err)
 	}
 	defer cursor.Close(ctx)
-	
+
 	var users []*domain.User
 	if err := cursor.All(ctx, &users); err != nil {
 		return nil, 0, fmt.Errorf("failed to decode users: %w", err)
 	}
-	
+
 	return users, total, nil
 }
 
 // Update updates a user
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	user.UpdatedAt = time.Now()
-	
+
 	_, err := r.collection.UpdateOne(
 		ctx,
 		bson.M{
@@ -209,7 +209,7 @@ func (r *UserRepository) Delete(ctx context.Context, id, tenantID string) error 
 	if err != nil {
 		return fmt.Errorf("invalid user ID: %w", err)
 	}
-	
+
 	_, err = r.collection.UpdateOne(
 		ctx,
 		bson.M{

@@ -288,7 +288,7 @@ HTTP Response ← Handler ← Service ← Cache Store
 - **mongo-driver**: MongoDB official driver
 - **go.uber.org/zap**: Structured logging
 - **google.golang.org/grpc**: gRPC framework
-- **vhvcorp/go-shared**: Shared utilities (config, errors, logger, etc.)
+- **vhvplatform/go-shared**: Shared utilities (config, errors, logger, etc.)
 
 ### Tools
 

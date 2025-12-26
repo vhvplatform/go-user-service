@@ -429,8 +429,8 @@ const (
 ## Contact
 
 For GDPR-related questions or to exercise data subject rights:
-- Email: privacy@vhvcorp.com
-- Data Protection Officer: dpo@vhvcorp.com
+- Email: privacy@vhvplatform.com
+- Data Protection Officer: dpo@vhvplatform.com
 
 ---
 
