@@ -22,11 +22,11 @@ type User struct {
 
 // UserPreferences represents user preferences
 type UserPreferences struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	UserID   string             `bson:"user_id" json:"user_id"`
-	TenantID string             `bson:"tenant_id" json:"tenant_id"`
-	Language string             `bson:"language" json:"language"`
-	Timezone string             `bson:"timezone" json:"timezone"`
-	Theme    string             `bson:"theme" json:"theme"`
+	ID       primitive.ObjectID     `bson:"_id,omitempty" json:"id"`
+	UserID   string                 `bson:"user_id" json:"user_id"`
+	TenantID string                 `bson:"tenant_id" json:"tenant_id"`
+	Language string                 `bson:"language" json:"language"`
+	Timezone string                 `bson:"timezone" json:"timezone"`
+	Theme    string                 `bson:"theme" json:"theme"`
 	Settings map[string]interface{} `bson:"settings,omitempty" json:"settings,omitempty"`
 }

@@ -276,11 +276,11 @@ func TestValidateObjectID(t *testing.T) {
 
 func TestValidatePagination(t *testing.T) {
 	tests := []struct {
-		name             string
-		page             int
-		pageSize         int
-		wantPage         int
-		wantPageSize     int
+		name         string
+		page         int
+		pageSize     int
+		wantPage     int
+		wantPageSize int
 	}{
 		{
 			name:         "valid pagination",
