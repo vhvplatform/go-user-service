@@ -187,6 +187,7 @@ internal/
 - **Validation**: go-playground/validator
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
+See [docs/DESIGN_ANALYSIS_VI.md](docs/DESIGN_ANALYSIS_VI.md) for comprehensive design and analysis documentation in Vietnamese.
 See [docs/diagrams/](docs/diagrams/) for PlantUML diagrams.
 
 ## API Documentation
