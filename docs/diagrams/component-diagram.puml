@@ -1,0 +1,318 @@
+@startuml Component Diagram - Go User Service
+title Sơ Đồ Thành Phần - User Service Architecture
+
+!define COMPONENT_STYLE
+
+' Client Layer
+package "Client Layer" {
+    component [Web Application] as WebApp
+    component [Mobile Application] as MobileApp
+    component [Admin Dashboard] as AdminDash
+    component [Other Services] as OtherServices
+}
+
+' API Gateway Layer
+package "API Gateway Layer" {
+    component [Load Balancer] as LB
+    component [API Gateway] as Gateway {
+        component [Routing] as Routing
+        component [Authentication] as Auth
+        component [Rate Limiting] as RateLimit
+        component [Request Logging] as ReqLog
+    }
+}
+
+' User Service - Main Application
+package "User Service Application" {
+    
+    ' HTTP Interface
+    package "HTTP Interface Layer" {
+        component [Gin Router] as GinRouter
+        component [REST Endpoints] as REST {
+            portin "POST /users"
+            portin "GET /users"
+            portin "GET /users/:id"
+            portin "PUT /users/:id"
+            portin "DELETE /users/:id"
+            portin "GET /users/search"
+        }
+        component [Health Checks] as Health
+    }
+    
+    ' gRPC Interface
+    package "gRPC Interface Layer" {
+        component [gRPC Server] as gRPCServer
+        component [User Service Proto] as UserProto {
+            portin "CreateUser"
+            portin "GetUser"
+            portin "UpdateUser"
+            portin "DeleteUser"
+            portin "ListUsers"
+        }
+        component [Health Service] as HealthService
+    }
+    
+    ' Middleware Components
+    package "Middleware Layer" {
+        component [Tenancy Middleware] as TenancyMW {
+            note right
+                - Extract X-Tenant-ID
+                - Validate tenant format
+                - Store in context
+            end note
+        }
+        component [Logging Middleware] as LogMW
+        component [Recovery Middleware] as RecoveryMW
+        component [CORS Middleware] as CORSMW
+    }
+    
+    ' Handler Components
+    package "Handler Layer" {
+        component [User Handler] as UserHandler {
+            [Request Binding]
+            [Response Formatting]
+            [Error Handling]
+        }
+        component [Preferences Handler] as PrefsHandler
+    }
+    
+    ' Service Components
+    package "Service Layer" {
+        component [User Service] as UserService {
+            [Create User]
+            [Get User]
+            [List Users]
+            [Search Users]
+            [Update User]
+            [Delete User]
+            [Export Data]
+        }
+        component [Validation Service] as ValidationSvc {
+            [Email Validation]
+            [Phone Validation]
+            [Input Sanitization]
+            [Business Rules]
+        }
+        component [Audit Service] as AuditSvc {
+            [Log Operations]
+            [Track Changes]
+            [Compliance]
+        }
+    }
+    
+    ' Repository Components
+    package "Repository Layer" {
+        component [User Repository] as UserRepo {
+            [CRUD Operations]
+            [Search & Filter]
+            [Index Management]
+            [Cache Integration]
+        }
+        component [Preferences Repository] as PrefsRepo
+        component [Audit Repository] as AuditRepo
+    }
+}
+
+' Data Layer
+package "Data Layer" {
+    database "MongoDB Cluster" as MongoDB {
+        frame "Collections" {
+            storage [users] as UsersCol
+            storage [user_preferences] as PrefsCol
+            storage [audit_logs] as AuditCol
+            storage [user_sessions] as SessionsCol
+        }
+    }
+    
+    database "Redis Cache" as Redis {
+        storage [User Profiles Cache]
+        storage [Search Results Cache]
+    }
+}
+
+' External Services
+package "External Services" {
+    component [Tenant Service] as TenantSvc
+    component [Notification Service] as NotificationSvc
+    component [Auth Service] as AuthSvc
+}
+
+' Observability Stack
+package "Observability" {
+    component [Prometheus] as Prometheus {
+        storage [Metrics]
+    }
+    component [Zap Logger] as ZapLogger {
+        storage [Structured Logs]
+    }
+    component [OpenTelemetry] as OTel {
+        storage [Traces]
+    }
+}
+
+' Message Queue (Future)
+package "Event Bus (Future)" {
+    queue "RabbitMQ" as RabbitMQ
+    component [Event Publisher] as EventPub
+    component [Event Consumer] as EventCons
+}
+
+' Relationships - Client to Gateway
+WebApp --> LB : HTTPS
+MobileApp --> LB : HTTPS
+AdminDash --> LB : HTTPS
+OtherServices --> LB : HTTPS/gRPC
+
+' Gateway Internal
+LB --> Gateway
+Gateway --> Routing
+Routing --> Auth
+Auth --> RateLimit
+RateLimit --> ReqLog
+
+' Gateway to Service
+ReqLog --> GinRouter : HTTP
+ReqLog --> gRPCServer : gRPC
+
+' HTTP Flow
+GinRouter --> REST
+REST --> TenancyMW
+TenancyMW --> LogMW
+LogMW --> RecoveryMW
+RecoveryMW --> CORSMW
+CORSMW --> UserHandler
+
+' gRPC Flow
+gRPCServer --> UserProto
+UserProto --> UserHandler
+
+' Handler to Service
+UserHandler --> UserService
+PrefsHandler --> UserService
+UserHandler --> PrefsHandler
+
+' Service Internal
+UserService --> ValidationSvc : validate input
+UserService --> AuditSvc : log operations
+
+' Service to Repository
+UserService --> UserRepo : data access
+UserService --> PrefsRepo : preferences
+UserService --> AuditRepo : audit logs
+
+' Repository to Data
+UserRepo --> UsersCol : query/insert/update
+UserRepo --> Redis : cache get/set
+PrefsRepo --> PrefsCol
+AuditRepo --> AuditCol
+
+' Service to External Services
+UserService --> TenantSvc : validate tenant (gRPC)
+UserService --> NotificationSvc : send notifications (gRPC)
+UserService ..> AuthSvc : delegate auth
+
+' Event Publishing (Future)
+UserService ..> EventPub : publish events
+EventPub ..> RabbitMQ : user.created\nuser.updated\nuser.deleted
+RabbitMQ ..> EventCons : consume
+EventCons ..> NotificationSvc : trigger notifications
+
+' Observability
+UserService --> ZapLogger : structured logs
+UserService --> Prometheus : export metrics
+UserService --> OTel : export traces
+UserHandler --> ZapLogger
+UserRepo --> ZapLogger
+
+' Health Checks
+Health --> UserService : check readiness
+Health --> MongoDB : check connection
+Health --> Redis : check connection
+HealthService --> UserService
+
+' Styling
+skinparam component {
+    BackgroundColor LightYellow
+    BorderColor Black
+    ArrowColor DarkBlue
+}
+
+skinparam package {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+skinparam database {
+    BackgroundColor LightSkyBlue
+    BorderColor Black
+}
+
+skinparam queue {
+    BackgroundColor LightGreen
+    BorderColor Black
+}
+
+skinparam storage {
+    BackgroundColor LightCyan
+    BorderColor Black
+}
+
+' Legend
+legend right
+    **Component Types**
+    • Component: Service/Module
+    • Database: Data Storage
+    • Queue: Message Queue
+    • Storage: Data Collection
+    
+    **Communication**
+    → : Synchronous Call
+    ..> : Asynchronous/Future
+    
+    **Layers**
+    • Client Layer
+    • API Gateway Layer
+    • Application Layer
+    • Data Layer
+    • External Services
+endlegend
+
+' Notes
+note right of TenancyMW
+    **Critical for Multi-Tenancy**
+    All requests must pass through
+    this middleware to ensure
+    tenant isolation
+end note
+
+note bottom of MongoDB
+    **Sharding Strategy**
+    - Shard key: tenant_id
+    - Ensures tenant co-location
+    - Optimizes query performance
+end note
+
+note right of Redis
+    **Caching Strategy**
+    - Cache-aside pattern
+    - TTL: 15 minutes
+    - Invalidate on update/delete
+    - Reduces DB load by 60%
+end note
+
+note bottom of UserService
+    **Core Business Logic**
+    - Validates all business rules
+    - Enforces tenant isolation
+    - Implements GDPR compliance
+    - Coordinates all operations
+end note
+
+note right of EventPub
+    **Future Enhancement**
+    Event-driven architecture
+    for async operations and
+    decoupled communication
+end note
+
+@enduml

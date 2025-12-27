@@ -1,0 +1,405 @@
+@startuml Deployment Diagram - Go User Service
+title Sơ Đồ Triển Khai - User Service Infrastructure
+
+' Cloud Provider
+cloud "Cloud Provider (AWS/GCP/Azure)" {
+    
+    ' Load Balancer / Ingress
+    node "Load Balancer" as LB {
+        component "AWS ALB / \nGCP Load Balancer / \nNGINX Ingress" as LoadBalancer
+        note right
+            - SSL/TLS termination
+            - Health checks
+            - Traffic distribution
+            - Rate limiting
+        end note
+    }
+    
+    ' Kubernetes Cluster
+    node "Kubernetes Cluster" as K8S {
+        
+        ' API Gateway Namespace
+        package "api-gateway namespace" {
+            node "API Gateway Pod" as GatewayPod {
+                component "API Gateway\nContainer" as Gateway
+                note right
+                    - JWT validation
+                    - Request routing
+                    - Rate limiting
+                    - CORS handling
+                end note
+            }
+        }
+        
+        ' User Service Namespace
+        package "user-service namespace" {
+            
+            ' User Service Pods (Replicas)
+            node "User Service Pod 1" as Pod1 {
+                component "User Service\nContainer" as Container1 {
+                    artifact "user-service\nbinary" as Binary1
+                    component "HTTP Server\n(port 8082)" as HTTP1
+                    component "gRPC Server\n(port 50052)" as GRPC1
+                }
+                
+                note bottom of Container1
+                    **Resources**
+                    CPU: 500m - 2000m
+                    Memory: 512Mi - 2Gi
+                    
+                    **Environment**
+                    - MONGODB_URI
+                    - REDIS_URL
+                    - LOG_LEVEL
+                end note
+            }
+            
+            node "User Service Pod 2" as Pod2 {
+                component "User Service\nContainer" as Container2
+            }
+            
+            node "User Service Pod 3" as Pod3 {
+                component "User Service\nContainer" as Container3
+            }
+            
+            ' ConfigMap and Secrets
+            database "ConfigMap" as ConfigMap {
+                storage "app-config.yaml"
+                note right
+                    - Service URLs
+                    - Feature flags
+                    - Default settings
+                end note
+            }
+            
+            database "Secrets" as Secrets {
+                storage "mongodb-credentials"
+                storage "redis-credentials"
+                storage "jwt-secret"
+                note right
+                    - Database passwords
+                    - API keys
+                    - Certificates
+                end note
+            }
+            
+            ' Service Discovery
+            component "Kubernetes Service" as K8SService {
+                portin ":8082 (HTTP)"
+                portin ":50052 (gRPC)"
+                note bottom
+                    **Service Type**: ClusterIP
+                    **Selector**: app=user-service
+                    **Load balancing**: Round-robin
+                end note
+            }
+            
+            ' Horizontal Pod Autoscaler
+            component "HPA" as HPA {
+                note right
+                    **Auto-scaling Rules**
+                    Min replicas: 2
+                    Max replicas: 10
+                    CPU target: 70%
+                    Memory target: 80%
+                end note
+            }
+        }
+    }
+    
+    ' Database Cluster
+    node "MongoDB Cluster" as MongoCluster {
+        database "Primary Node" as MongoPrimary {
+            storage "users"
+            storage "user_preferences"
+            storage "audit_logs"
+            note bottom
+                **Specs**
+                Instance: 4 vCPU, 16GB RAM
+                Storage: 500GB SSD
+                IOPS: 3000
+            end note
+        }
+        
+        database "Secondary Node 1" as MongoSecondary1 {
+            storage "Read Replica"
+        }
+        
+        database "Secondary Node 2" as MongoSecondary2 {
+            storage "Read Replica"
+        }
+        
+        database "Arbiter" as MongoArbiter {
+            note right: Voting only
+        }
+    }
+    
+    ' Redis Cluster
+    node "Redis Cluster" as RedisCluster {
+        database "Redis Master" as RedisMaster {
+            storage "User Cache"
+            storage "Session Cache"
+            note bottom
+                **Specs**
+                Instance: 2 vCPU, 8GB RAM
+                Persistence: AOF
+                Eviction: allkeys-lru
+            end note
+        }
+        
+        database "Redis Replica 1" as RedisReplica1
+        database "Redis Replica 2" as RedisReplica2
+    }
+    
+    ' Monitoring Stack
+    node "Monitoring Infrastructure" {
+        component "Prometheus" as Prometheus {
+            storage "Metrics DB"
+            note right
+                - Service metrics
+                - Resource usage
+                - Business metrics
+                - Alert rules
+            end note
+        }
+        
+        component "Grafana" as Grafana {
+            artifact "Dashboards"
+            note right
+                - Real-time monitoring
+                - Custom dashboards
+                - Alerting UI
+            end note
+        }
+        
+        component "Loki" as Loki {
+            storage "Logs"
+            note right
+                - Centralized logging
+                - Log aggregation
+                - Query interface
+            end note
+        }
+        
+        component "Jaeger" as Jaeger {
+            storage "Traces"
+            note right
+                - Distributed tracing
+                - Request flow
+                - Performance analysis
+            end note
+        }
+    }
+    
+    ' Backup Storage
+    node "Backup & Archive" {
+        database "S3 / Cloud Storage" as S3 {
+            storage "Database Backups"
+            storage "Audit Log Archives"
+            storage "Data Exports"
+            note right
+                **Retention Policy**
+                Daily backups: 30 days
+                Weekly backups: 90 days
+                Monthly backups: 1 year
+                Audit logs: 7 years
+            end note
+        }
+    }
+}
+
+' External Networks
+cloud "External Services" {
+    component "Tenant Service" as TenantSvc
+    component "Notification Service" as NotificationSvc
+    component "Auth Service" as AuthSvc
+}
+
+' Network Relationships
+LoadBalancer --> GatewayPod : HTTPS/443
+GatewayPod --> K8SService : HTTP/gRPC
+K8SService --> Pod1 : Route traffic
+K8SService --> Pod2 : Route traffic
+K8SService --> Pod3 : Route traffic
+
+' Config and Secrets
+ConfigMap ..> Pod1 : mount as volume
+ConfigMap ..> Pod2 : mount as volume
+ConfigMap ..> Pod3 : mount as volume
+Secrets ..> Pod1 : inject as env vars
+Secrets ..> Pod2 : inject as env vars
+Secrets ..> Pod3 : inject as env vars
+
+' HPA Management
+HPA ..> Pod1 : scale
+HPA ..> Pod2 : scale
+HPA ..> Pod3 : scale
+
+' Database Connections
+Pod1 --> MongoPrimary : Write operations
+Pod1 --> MongoSecondary1 : Read operations
+Pod1 --> MongoSecondary2 : Read operations
+Pod2 --> MongoPrimary : Write operations
+Pod2 --> MongoSecondary1 : Read operations
+Pod3 --> MongoPrimary : Write operations
+
+' MongoDB Replication
+MongoPrimary --> MongoSecondary1 : Replicate
+MongoPrimary --> MongoSecondary2 : Replicate
+MongoPrimary ..> MongoArbiter : Election
+
+' Redis Connections
+Pod1 --> RedisMaster : Cache operations
+Pod1 --> RedisReplica1 : Read cache
+Pod2 --> RedisMaster : Cache operations
+Pod3 --> RedisMaster : Cache operations
+
+' Redis Replication
+RedisMaster --> RedisReplica1 : Replicate
+RedisMaster --> RedisReplica2 : Replicate
+
+' External Service Communication
+Pod1 --> TenantSvc : gRPC
+Pod1 --> NotificationSvc : gRPC
+Pod2 --> TenantSvc : gRPC
+Pod3 --> NotificationSvc : gRPC
+
+' Monitoring Connections
+Pod1 --> Prometheus : /metrics
+Pod2 --> Prometheus : /metrics
+Pod3 --> Prometheus : /metrics
+Pod1 --> Loki : push logs
+Pod2 --> Loki : push logs
+Pod3 --> Loki : push logs
+Pod1 --> Jaeger : push traces
+Prometheus --> Grafana : data source
+Loki --> Grafana : data source
+Jaeger --> Grafana : data source
+
+' Backup
+MongoPrimary ..> S3 : automated backups\n(daily, weekly, monthly)
+
+' Network Zones
+rectangle "Public Zone" {
+    LoadBalancer
+}
+
+rectangle "Private Zone" {
+    K8S
+    MongoCluster
+    RedisCluster
+}
+
+rectangle "Monitoring Zone" {
+    Prometheus
+    Grafana
+    Loki
+    Jaeger
+}
+
+' Styling
+skinparam node {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+skinparam component {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+skinparam database {
+    BackgroundColor LightCyan
+    BorderColor Black
+}
+
+skinparam cloud {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+skinparam package {
+    BackgroundColor WhiteSmoke
+    BorderColor DarkGray
+}
+
+' Legend
+legend right
+    **Deployment Architecture**
+    
+    **High Availability**
+    - Multiple service replicas
+    - Database replication
+    - Cache replication
+    - Auto-scaling enabled
+    
+    **Security**
+    - Private network isolation
+    - Secrets management
+    - TLS encryption
+    - Network policies
+    
+    **Observability**
+    - Metrics (Prometheus)
+    - Logs (Loki)
+    - Traces (Jaeger)
+    - Dashboards (Grafana)
+    
+    **Disaster Recovery**
+    - Automated backups
+    - Point-in-time recovery
+    - Multi-AZ deployment
+    - Failover mechanisms
+endlegend
+
+' Additional Notes
+note right of K8S
+    **Kubernetes Configuration**
+    
+    **Deployment Strategy**: Rolling Update
+    Max Surge: 1
+    Max Unavailable: 0
+    
+    **Health Checks**
+    Liveness: GET /health (every 10s)
+    Readiness: GET /ready (every 5s)
+    
+    **Resource Limits**
+    CPU Request: 500m
+    CPU Limit: 2000m
+    Memory Request: 512Mi
+    Memory Limit: 2Gi
+end note
+
+note bottom of MongoCluster
+    **MongoDB Configuration**
+    
+    **Replica Set**: rs-user-service
+    **Write Concern**: majority
+    **Read Preference**: secondaryPreferred
+    
+    **Sharding** (Future)
+    Shard Key: tenant_id
+    Chunks: Auto-balanced
+    
+    **Backup Strategy**
+    Method: mongodump + oplog
+    Frequency: Daily at 2 AM UTC
+    Retention: 30 days
+end note
+
+note bottom of RedisCluster
+    **Redis Configuration**
+    
+    **Replication**: Async
+    **Persistence**: AOF (appendonly)
+    **Eviction Policy**: allkeys-lru
+    **Max Memory**: 6GB
+    
+    **Sentinel** (High Availability)
+    Monitors master
+    Auto-failover
+    Configuration management
+end note
+
+@enduml

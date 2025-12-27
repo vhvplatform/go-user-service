@@ -1,0 +1,317 @@
+@startuml Class Diagram - Go User Service
+title Sơ Đồ Lớp Chi Tiết - User Service
+
+' Domain Layer
+package "Domain Layer" <<Rectangle>> {
+    class User {
+        - ID : ObjectID
+        - Email : string
+        - TenantID : string
+        - FirstName : string
+        - LastName : string
+        - Phone : string
+        - AvatarURL : string
+        - IsActive : bool
+        - CreatedAt : time.Time
+        - UpdatedAt : time.Time
+        --
+        + Validate() error
+        + IsDeleted() bool
+        + GetFullName() string
+    }
+
+    class UserPreferences {
+        - ID : ObjectID
+        - UserID : string
+        - TenantID : string
+        - Language : string
+        - Timezone : string
+        - Theme : string
+        - Settings : map[string]interface{}
+        --
+        + GetSetting(key string) interface{}
+        + SetSetting(key, value string)
+    }
+
+    class CreateUserRequest {
+        + Email : string
+        + TenantID : string
+        + FirstName : string
+        + LastName : string
+        + Phone : string
+        --
+        + Validate() error
+    }
+
+    class UpdateUserRequest {
+        + FirstName : string
+        + LastName : string
+        + Phone : string
+        + AvatarURL : string
+        --
+        + Validate() error
+    }
+
+    class UserResponse {
+        + ID : string
+        + Email : string
+        + TenantID : string
+        + FirstName : string
+        + LastName : string
+        + Phone : string
+        + AvatarURL : string
+        + IsActive : bool
+        + CreatedAt : string
+        + UpdatedAt : string
+    }
+
+    class ListUsersResponse {
+        + Users : []UserResponse
+        + Total : int64
+        + Page : int
+        + PageSize : int
+    }
+
+    User "1" -- "0..1" UserPreferences : has >
+}
+
+' Repository Layer
+package "Repository Layer" <<Rectangle>> {
+    interface IUserRepository {
+        + Create(ctx, user) error
+        + FindByID(ctx, id, tenantID) (*User, error)
+        + FindByEmail(ctx, email, tenantID) (*User, error)
+        + List(ctx, tenantID, page, pageSize) ([]*User, int64, error)
+        + Search(ctx, tenantID, query, page, pageSize) ([]*User, int64, error)
+        + Update(ctx, user) error
+        + Delete(ctx, id, tenantID) error
+    }
+
+    class UserRepository {
+        - collection : *mongo.Collection
+        - cache : *redis.Client
+        --
+        + Create(ctx, user) error
+        + FindByID(ctx, id, tenantID) (*User, error)
+        + FindByEmail(ctx, email, tenantID) (*User, error)
+        + List(ctx, tenantID, page, pageSize) ([]*User, int64, error)
+        + Search(ctx, tenantID, query, page, pageSize) ([]*User, int64, error)
+        + Update(ctx, user) error
+        + Delete(ctx, id, tenantID) error
+        --
+        - getCached(key string) (*User, error)
+        - setCache(key string, user *User)
+        - invalidateCache(id string)
+        - buildIndexes()
+    }
+
+    class PreferencesRepository {
+        - collection : *mongo.Collection
+        --
+        + Create(ctx, prefs) error
+        + FindByUserID(ctx, userID, tenantID) (*UserPreferences, error)
+        + Update(ctx, prefs) error
+        + Delete(ctx, userID, tenantID) error
+    }
+
+    class AuditRepository {
+        - collection : *mongo.Collection
+        --
+        + Create(ctx, log) error
+        + FindByUserID(ctx, userID, tenantID) ([]*AuditLog, error)
+        + FindByTenantID(ctx, tenantID, page, pageSize) ([]*AuditLog, int64, error)
+    }
+
+    IUserRepository <|.. UserRepository : implements
+    UserRepository ..> User : manages
+    PreferencesRepository ..> UserPreferences : manages
+}
+
+' Service Layer
+package "Service Layer" <<Rectangle>> {
+    class UserService {
+        - userRepo : *UserRepository
+        - prefsRepo : *PreferencesRepository
+        - auditRepo : *AuditRepository
+        - logger : *Logger
+        - validator : *Validator
+        --
+        + CreateUser(ctx, request) (*User, error)
+        + GetUser(ctx, id, tenantID) (*User, error)
+        + ListUsers(ctx, tenantID, page, pageSize) ([]*User, int64, error)
+        + SearchUsers(ctx, tenantID, query, page, pageSize) ([]*User, int64, error)
+        + UpdateUser(ctx, id, tenantID, request) (*User, error)
+        + DeleteUser(ctx, id, tenantID) error
+        + ExportUserData(ctx, userID, tenantID) (*UserDataExport, error)
+        --
+        - validateEmail(email) error
+        - validatePhone(phone) error
+        - sanitizeInput(input) string
+        - checkDuplicate(email, tenantID) error
+        - logAudit(action, userID, changes)
+    }
+
+    class ValidationService {
+        --
+        + ValidateEmail(email) error
+        + ValidateName(name, field) error
+        + ValidatePhone(phone) error
+        + ValidateObjectID(id) error
+        + ValidateTenantID(tenantID) error
+        + ValidatePagination(page, pageSize) (int, int, error)
+        + SanitizeString(s) string
+        + SanitizeName(name) string
+    }
+
+    UserService o-- UserRepository : uses
+    UserService o-- PreferencesRepository : uses
+    UserService o-- AuditRepository : uses
+    UserService o-- ValidationService : uses
+    UserService ..> User : creates/updates
+    UserService ..> CreateUserRequest : processes
+    UserService ..> UpdateUserRequest : processes
+    UserService ..> UserResponse : returns
+}
+
+' Handler Layer
+package "Handler Layer" <<Rectangle>> {
+    class UserHandler {
+        - userService : *UserService
+        - logger : *Logger
+        --
+        + CreateUser(c *gin.Context)
+        + GetUser(c *gin.Context)
+        + ListUsers(c *gin.Context)
+        + SearchUsers(c *gin.Context)
+        + UpdateUser(c *gin.Context)
+        + DeleteUser(c *gin.Context)
+        --
+        - toUserResponse(user) UserResponse
+        - respondError(c, error)
+        - extractTenantID(c) string
+    }
+
+    class gRPCUserHandler {
+        - userService : *UserService
+        - logger : *Logger
+        --
+        + CreateUser(ctx, req) (*UserResponse, error)
+        + GetUser(ctx, req) (*UserResponse, error)
+        + ListUsers(ctx, req) (*ListUsersResponse, error)
+        + UpdateUser(ctx, req) (*UserResponse, error)
+        + DeleteUser(ctx, req) (*Empty, error)
+        --
+        - toProtoUser(user) *pb.User
+        - fromProtoUser(pbUser) *User
+    }
+
+    UserHandler o-- UserService : uses
+    gRPCUserHandler o-- UserService : uses
+    UserHandler ..> UserResponse : creates
+    UserHandler ..> CreateUserRequest : receives
+    UserHandler ..> UpdateUserRequest : receives
+}
+
+' Middleware Layer
+package "Middleware Layer" <<Rectangle>> {
+    class TenancyMiddleware {
+        --
+        + {static} TenancyMiddleware() gin.HandlerFunc
+        + {static} GetTenantID(c) string
+        + {static} MustGetTenantID(c) string
+        + {static} GetTenantIDFromContext(ctx) string
+        --
+        - validateTenantID(tenantID) error
+    }
+
+    class LoggingMiddleware {
+        - logger : *Logger
+        --
+        + LogRequest() gin.HandlerFunc
+        + LogResponse() gin.HandlerFunc
+    }
+
+    class AuthMiddleware {
+        --
+        + ValidateJWT() gin.HandlerFunc
+        + ExtractUserID(c) string
+        + ExtractRoles(c) []string
+    }
+
+    UserHandler ..> TenancyMiddleware : requires
+}
+
+' External Dependencies
+package "External Dependencies" <<Database>> {
+    class "MongoDB Client" as MongoDB {
+        + Database() *mongo.Database
+        + Collection(name) *mongo.Collection
+        + Close() error
+    }
+
+    class "Redis Client" as Redis {
+        + Get(key) (string, error)
+        + Set(key, value, ttl)
+        + Delete(key) error
+    }
+
+    class "Logger (Zap)" as Logger {
+        + Info(msg, fields...)
+        + Error(msg, fields...)
+        + Warn(msg, fields...)
+        + Debug(msg, fields...)
+    }
+
+    UserRepository ..> MongoDB : uses
+    UserRepository ..> Redis : uses
+    UserService ..> Logger : uses
+    UserHandler ..> Logger : uses
+}
+
+' Notes
+note right of User
+    **Core Domain Entity**
+    - Immutable ID
+    - Unique email per tenant
+    - Soft delete with is_active
+    - Audit trail with timestamps
+end note
+
+note bottom of UserService
+    **Business Logic Layer**
+    - Validates business rules
+    - Enforces tenant isolation
+    - Logs all operations
+    - Handles GDPR requirements
+end note
+
+note right of UserRepository
+    **Data Access Layer**
+    - Abstracts MongoDB operations
+    - Implements caching strategy
+    - Manages database indexes
+    - Handles connection pooling
+end note
+
+note right of TenancyMiddleware
+    **Multi-Tenancy Enforcement**
+    - Extracts X-Tenant-ID header
+    - Validates tenant format
+    - Stores in context
+    - Required for all endpoints
+end note
+
+' Styling
+skinparam class {
+    BackgroundColor<<Rectangle>> LightYellow
+    BackgroundColor<<Database>> LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam package {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+@enduml
