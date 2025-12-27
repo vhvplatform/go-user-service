@@ -91,8 +91,8 @@ sudo apt-get install plantuml
 # macOS with Homebrew
 brew install plantuml
 
-# Or download JAR file
-wget https://sourceforge.net/projects/plantuml/files/plantuml.jar/download
+# Or download JAR file directly
+wget https://github.com/plantuml/plantuml/releases/download/v1.2023.13/plantuml-1.2023.13.jar -O plantuml.jar
 ```
 
 **Generate PNG images:**
