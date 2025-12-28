@@ -29,20 +29,20 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 		{
 			Keys: bson.D{
 				{Key: "email", Value: 1},
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 			},
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: bson.D{{Key: "tenant_id", Value: 1}},
+			Keys: bson.D{{Key: "tenantId", Value: 1}},
 		},
 		{
 			Keys: bson.D{{Key: "email", Value: 1}},
 		},
 		{
 			Keys: bson.D{
-				{Key: "first_name", Value: "text"},
-				{Key: "last_name", Value: "text"},
+				{Key: "firstName", Value: "text"},
+				{Key: "lastName", Value: "text"},
 				{Key: "email", Value: "text"},
 			},
 		},
@@ -77,8 +77,8 @@ func (r *UserRepository) FindByID(ctx context.Context, id, tenantID string) (*do
 
 	var user domain.User
 	err = r.collection.FindOne(ctx, bson.M{
-		"_id":       objectID,
-		"tenant_id": tenantID,
+		"_id":      objectID,
+		"tenantId": tenantID,
 	}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -93,8 +93,8 @@ func (r *UserRepository) FindByID(ctx context.Context, id, tenantID string) (*do
 func (r *UserRepository) FindByEmail(ctx context.Context, email, tenantID string) (*domain.User, error) {
 	var user domain.User
 	err := r.collection.FindOne(ctx, bson.M{
-		"email":     email,
-		"tenant_id": tenantID,
+		"email":    email,
+		"tenantId": tenantID,
 	}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -116,7 +116,7 @@ func (r *UserRepository) List(ctx context.Context, tenantID string, page, pageSi
 
 	skip := (page - 1) * pageSize
 
-	filter := bson.M{"tenant_id": tenantID}
+	filter := bson.M{"tenantId": tenantID}
 
 	// Get total count
 	total, err := r.collection.CountDocuments(ctx, filter)
@@ -128,7 +128,7 @@ func (r *UserRepository) List(ctx context.Context, tenantID string, page, pageSi
 	opts := options.Find().
 		SetSkip(int64(skip)).
 		SetLimit(int64(pageSize)).
-		SetSort(bson.D{{Key: "created_at", Value: -1}})
+		SetSort(bson.D{{Key: "createdAt", Value: -1}})
 
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
@@ -156,8 +156,8 @@ func (r *UserRepository) Search(ctx context.Context, tenantID, query string, pag
 	skip := (page - 1) * pageSize
 
 	filter := bson.M{
-		"tenant_id": tenantID,
-		"$text":     bson.M{"$search": query},
+		"tenantId": tenantID,
+		"$text":    bson.M{"$search": query},
 	}
 
 	// Get total count
@@ -192,8 +192,8 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	_, err := r.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id":       user.ID,
-			"tenant_id": user.TenantID,
+			"_id":      user.ID,
+			"tenantId": user.TenantID,
 		},
 		bson.M{"$set": user},
 	)
@@ -213,13 +213,13 @@ func (r *UserRepository) Delete(ctx context.Context, id, tenantID string) error 
 	_, err = r.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id":       objectID,
-			"tenant_id": tenantID,
+			"_id":      objectID,
+			"tenantId": tenantID,
 		},
 		bson.M{
 			"$set": bson.M{
-				"is_active":  false,
-				"updated_at": time.Now(),
+				"isActive":  false,
+				"updatedAt": time.Now(),
 			},
 		},
 	)
