@@ -254,6 +254,20 @@ clean.bat
 
 For comprehensive Windows development instructions, including troubleshooting and IDE setup, see the [Windows Development Guide](docs/WINDOWS_DEVELOPMENT.md).
 
+### Quick Reference - Windows Commands
+
+| Task | Linux/macOS | Windows |
+|------|-------------|---------|
+| Install dependencies | `make deps` | `deps.bat` |
+| Build service | `make build` | `build.bat` |
+| Run service | `make run` | `run.bat` |
+| Run tests | `make test` | `test.bat` |
+| Run tests with coverage | `make test-coverage` | `test.bat coverage` |
+| Lint code | `make lint` | `lint.bat` |
+| Format code | `make fmt` | `fmt.bat` |
+| Clean artifacts | `make clean` | `clean.bat` |
+| Install dev tools | `make install-tools` | `install-tools.bat` |
+
 ## API Documentation
 
 See [docs/API.md](docs/API.md) for API documentation.
