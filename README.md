@@ -68,7 +68,17 @@ See [ARCHITECTURAL_CONFORMANCE.md](docs/ARCHITECTURAL_CONFORMANCE.md) for detail
 - Redis 6.0+ (if applicable)
 - RabbitMQ 3.9+ (if applicable)
 
+### Windows Development Prerequisites
+
+- **Go 1.25.5+**: Download from [golang.org](https://golang.org/dl/)
+- **Git for Windows**: Download from [git-scm.com](https://git-scm.com/download/win)
+- **Make (Optional)**: Use [Chocolatey](https://chocolatey.org/) to install: `choco install make`
+  - Alternatively, use the provided `.bat` scripts instead of Makefile commands
+- **Docker Desktop** (Optional for containerized services): Download from [docker.com](https://www.docker.com/products/docker-desktop)
+
 ## Installation
+
+### Linux/macOS
 
 ```bash
 # Clone the repository
@@ -77,6 +87,17 @@ cd go-user-service
 
 # Install dependencies
 go mod download
+```
+
+### Windows
+
+```cmd
+REM Clone the repository
+git clone https://github.com/vhvplatform/go-user-service.git
+cd go-user-service
+
+REM Install dependencies
+deps.bat
 ```
 
 ## Configuration
@@ -109,8 +130,14 @@ NOTIFICATION_SERVICE_URL=localhost:50054
 
 Copy the example environment file and update with your values:
 
+**Linux/macOS:**
 ```bash
 cp .env.example .env
+```
+
+**Windows:**
+```cmd
+copy .env.example .env
 ```
 
 See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment variables.
@@ -119,6 +146,7 @@ See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment v
 
 ### Running Locally
 
+**Linux/macOS:**
 ```bash
 # Run the service
 make run
@@ -127,16 +155,26 @@ make run
 go run cmd/main.go
 ```
 
+**Windows:**
+```cmd
+REM Run the service
+run.bat
+
+REM Or with go run
+go run cmd\main.go
+```
+
 ### Running with Docker
 
 ```bash
-# Build and run
+# Build and run (works on all platforms)
 make docker-build
 make docker-run
 ```
 
 ### Running Tests
 
+**Linux/macOS:**
 ```bash
 # Run all tests
 make test
@@ -145,8 +183,18 @@ make test
 make test-coverage
 ```
 
+**Windows:**
+```cmd
+REM Run all tests
+test.bat
+
+REM Run with coverage
+test.bat coverage
+```
+
 ### Linting
 
+**Linux/macOS:**
 ```bash
 # Run linters
 make lint
@@ -154,6 +202,71 @@ make lint
 # Format code
 make fmt
 ```
+
+**Windows:**
+```cmd
+REM Run linters
+lint.bat
+
+REM Format code
+fmt.bat
+```
+
+### Building
+
+**Linux/macOS:**
+```bash
+# Build the service
+make build
+```
+
+**Windows:**
+```cmd
+REM Build the service
+build.bat
+```
+
+### Installing Development Tools
+
+**Linux/macOS:**
+```bash
+make install-tools
+```
+
+**Windows:**
+```cmd
+install-tools.bat
+```
+
+### Cleaning Build Artifacts
+
+**Linux/macOS:**
+```bash
+make clean
+```
+
+**Windows:**
+```cmd
+clean.bat
+```
+
+## Windows Development
+
+For comprehensive Windows development instructions, including troubleshooting and IDE setup, see the [Windows Development Guide](docs/WINDOWS_DEVELOPMENT.md).
+
+### Quick Reference - Windows Commands
+
+| Task | Linux/macOS | Windows |
+|------|-------------|---------|
+| Install dependencies | `make deps` | `deps.bat` |
+| Build service | `make build` | `build.bat` |
+| Run service | `make run` | `run.bat` |
+| Run tests | `make test` | `test.bat` |
+| Run tests with coverage | `make test-coverage` | `test.bat coverage` |
+| Lint code | `make lint` | `lint.bat` |
+| Format code | `make fmt` | `fmt.bat` |
+| Clean artifacts | `make clean` | `clean.bat` |
+| Install dev tools | `make install-tools` | `install-tools.bat` |
 
 ## API Documentation
 
