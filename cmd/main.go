@@ -155,10 +155,11 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 		}
 	}
 
+	// Create HTTP server with security configurations
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%s", port),
 		Handler:           router,
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
 	}
 
 	// Start server in goroutine
