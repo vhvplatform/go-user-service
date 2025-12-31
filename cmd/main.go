@@ -156,8 +156,9 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	}
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: router,
+		Addr:              fmt.Sprintf(":%s", port),
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	// Start server in goroutine

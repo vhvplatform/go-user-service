@@ -9,7 +9,7 @@ import (
 
 var (
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	phoneRegex = regexp.MustCompile(`^\+?[1-9]\d{1,14}$`) // E.164 format
+	phoneRegex = regexp.MustCompile(`^\+?[1-9]\d{6,14}$`) // E.164 format (7-15 digits total)
 )
 
 // ValidateEmail validates email format
