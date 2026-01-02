@@ -111,10 +111,10 @@ func (s *UserService) GetUser(ctx context.Context, id, tenantID string) (*domain
 }
 
 // ListUsers lists users for a tenant with pagination
-func (s *UserService) ListUsers(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.User, int64, error) {
+func (s *UserService) ListUsers(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.User, int64, int, int, string, error) {
 	// Validate input
 	if err := validation.ValidateTenantID(tenantID); err != nil {
-		return nil, 0, errors.BadRequest(err.Error())
+		return nil, 0, page, pageSize, string(errors.ErrCodeTenantNotFound), errors.BadRequest(err.Error())
 	}
 
 	page, pageSize, _ = validation.ValidatePagination(page, pageSize)
@@ -122,9 +122,9 @@ func (s *UserService) ListUsers(ctx context.Context, tenantID string, page, page
 	users, total, err := s.userRepo.List(ctx, tenantID, page, pageSize)
 	if err != nil {
 		s.logger.Error("Failed to list users", zap.Error(err))
-		return nil, 0, errors.Internal("Failed to list users")
+		return nil, 0, page, pageSize, string(errors.ErrCodeNotFound), errors.Internal("Failed to list users")
 	}
-	return users, total, nil
+	return users, total, page, pageSize, "00", nil
 }
 
 // SearchUsers searches users by query
