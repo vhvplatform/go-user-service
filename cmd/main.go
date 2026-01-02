@@ -138,7 +138,7 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	userHandler := handler.NewUserHandler(userService, log)
 
 	// Swagger endpoint
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/api/v1/users/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check endpoints
 	router.GET("/api/v1/users/health", func(c *gin.Context) {
