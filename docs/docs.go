@@ -110,7 +110,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_vhvplatform_go-user-service_internal_domain.CreateUserRequest"
+                            "$ref": "#/definitions/domain.CreateUserRequest"
                         }
                     }
                 ],
@@ -307,7 +307,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_vhvplatform_go-user-service_internal_domain.UpdateUserRequest"
+                            "$ref": "#/definitions/domain.UpdateUserRequest"
                         }
                     }
                 ],
@@ -404,7 +404,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_vhvplatform_go-user-service_internal_domain.CreateUserRequest": {
+        "domain.CreateUserRequest": {
             "type": "object",
             "required": [
                 "email"
@@ -428,7 +428,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_vhvplatform_go-user-service_internal_domain.UpdateUserRequest": {
+        "domain.UpdateUserRequest": {
             "type": "object",
             "properties": {
                 "avatar_url": {

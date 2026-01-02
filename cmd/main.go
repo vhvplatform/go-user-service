@@ -16,7 +16,7 @@ import (
 	"github.com/vhvplatform/go-shared/config"
 	"github.com/vhvplatform/go-shared/logger"
 	"github.com/vhvplatform/go-shared/mongodb"
-	_ "github.com/vhvplatform/go-user-service/docs" // Swagger docs
+	"github.com/vhvplatform/go-user-service/docs"
 	"github.com/vhvplatform/go-user-service/internal/grpc"
 	"github.com/vhvplatform/go-user-service/internal/handler"
 	"github.com/vhvplatform/go-user-service/internal/middleware"
@@ -125,6 +125,15 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	router := gin.New()
 	router.Use(gin.Recovery())
 
+	if envHost := os.Getenv("SWAGGER_HOST"); envHost != "" {
+		docs.SwaggerInfo.Host = envHost
+	} else {
+		docs.SwaggerInfo.Host = "" // Để rỗng để tự nhận diện theo Browser
+	}
+
+	// 3. Schemes: Hỗ trợ cả http và https
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService, log)
 
@@ -132,10 +141,11 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check endpoints
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/api/v1/users/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
-	router.GET("/ready", func(c *gin.Context) {
+
+	router.GET("/api/v1/users/ready", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 

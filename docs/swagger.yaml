@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_vhvplatform_go-user-service_internal_domain.CreateUserRequest:
+  domain.CreateUserRequest:
     properties:
       email:
         type: string
@@ -16,7 +16,7 @@ definitions:
     required:
     - email
     type: object
-  github_com_vhvplatform_go-user-service_internal_domain.UpdateUserRequest:
+  domain.UpdateUserRequest:
     properties:
       avatar_url:
         type: string
@@ -98,7 +98,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/github_com_vhvplatform_go-user-service_internal_domain.CreateUserRequest'
+          $ref: '#/definitions/domain.CreateUserRequest'
       produces:
       - application/json
       responses:
@@ -228,7 +228,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/github_com_vhvplatform_go-user-service_internal_domain.UpdateUserRequest'
+          $ref: '#/definitions/domain.UpdateUserRequest'
       produces:
       - application/json
       responses:
