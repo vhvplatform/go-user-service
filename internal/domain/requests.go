@@ -21,7 +21,7 @@ type UpdateUserRequest struct {
 type ListUsersRequest struct {
 	TenantID string `form:"tenant_id"`
 	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
+	PageSize int    `form:"itemsPerPage"`
 }
 
 // SearchUsersRequest represents a search users request
@@ -29,7 +29,7 @@ type SearchUsersRequest struct {
 	TenantID string `form:"tenant_id" binding:"required"`
 	Query    string `form:"q" binding:"required"`
 	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
+	PageSize int    `form:"itemsPerPage"`
 }
 
 // UserResponse represents a user in API responses
@@ -51,5 +51,5 @@ type ListUsersResponse struct {
 	Users    []UserResponse `json:"users"`
 	Total    int64          `json:"total"`
 	Page     int            `json:"page"`
-	PageSize int            `json:"page_size"`
+	PageSize int            `json:"itemsPerPage"`
 }

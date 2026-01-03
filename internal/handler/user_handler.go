@@ -66,7 +66,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	tenantID := middleware.MustGetTenantID(c)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("itemsPerPage", "20"))
 
 	users, total, err := h.userService.ListUsers(c.Request.Context(), tenantID, page, pageSize)
 	if err != nil {
@@ -100,7 +100,7 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("itemsPerPage", "20"))
 
 	users, total, err := h.userService.SearchUsers(c.Request.Context(), tenantID, query, page, pageSize)
 	if err != nil {
