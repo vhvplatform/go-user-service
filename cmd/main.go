@@ -11,9 +11,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/vhvplatform/go-shared/config"
 	"github.com/vhvplatform/go-shared/logger"
 	"github.com/vhvplatform/go-shared/mongodb"
+	"github.com/vhvplatform/go-user-service/docs"
 	"github.com/vhvplatform/go-user-service/internal/grpc"
 	"github.com/vhvplatform/go-user-service/internal/handler"
 	"github.com/vhvplatform/go-user-service/internal/middleware"
@@ -25,6 +28,26 @@ import (
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
+
+// @title User Service API
+// @version 1.0
+// @description Multi-tenant User Management Service with REST and gRPC APIs
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.vhvplatform.com/support
+// @contact.email support@vhvplatform.com
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8082
+// @BasePath /
+// @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	// Load configuration
@@ -102,14 +125,27 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	router := gin.New()
 	router.Use(gin.Recovery())
 
+	if envHost := os.Getenv("SWAGGER_HOST"); envHost != "" {
+		docs.SwaggerInfo.Host = envHost
+	} else {
+		docs.SwaggerInfo.Host = "" // Để rỗng để tự nhận diện theo Browser
+	}
+
+	// 3. Schemes: Hỗ trợ cả http và https
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService, log)
 
+	// Swagger endpoint
+	router.GET("/api/v1/users/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Health check endpoints
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/api/v1/users/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
-	router.GET("/ready", func(c *gin.Context) {
+
+	router.GET("/api/v1/users/ready", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 
@@ -129,9 +165,11 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 		}
 	}
 
+	// Create HTTP server with security configurations
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: router,
+		Addr:              fmt.Sprintf(":%s", port),
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
 	}
 
 	// Start server in goroutine

@@ -87,4 +87,20 @@ install-tools: ## Install development tools
 	fi
 	@echo "Tools installed!"
 
+# Swagger documentation
+.PHONY: swagger
+swagger: ## Generate swagger documentation
+	@echo "Generating swagger docs..."
+	@swag init -g cmd/main.go -o docs --parseDependency --parseInternal
+
+.PHONY: swagger-fmt
+swagger-fmt: ## Format swagger comments
+	@echo "Formatting swagger comments..."
+	@swag fmt
+
+.PHONY: install-swag
+install-swag: ## Install swag CLI tool
+	@echo "Installing swag..."
+	@go install github.com/swaggo/swag/cmd/swag@latest
+
 .DEFAULT_GOAL := help

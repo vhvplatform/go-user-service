@@ -27,7 +27,19 @@ func NewUserHandler(userService *service.UserService, log *logger.Logger) *UserH
 	}
 }
 
-// CreateUser handles user creation
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Create a new user in the system with multi-tenancy support
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param user body domain.CreateUserRequest true "User creation request"
+// @Success 201 {object} map[string]interface{} "User created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 409 {object} map[string]interface{} "User already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req domain.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,7 +59,19 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": h.toUserResponse(user)})
 }
 
-// GetUser handles getting a user by ID
+// GetUser godoc
+// @Summary Get user by ID
+// @Description Get a user by their ID within a tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]interface{} "User details"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := middleware.MustGetTenantID(c)
@@ -61,7 +85,19 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
 }
 
-// ListUsers handles listing users
+// ListUsers godoc
+// @Summary List all users
+// @Description Get a paginated list of users within a tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(20)
+// @Success 200 {object} map[string]interface{} "List of users with pagination"
+// @Failure 400 {object} map[string]interface{} "Invalid parameters"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	tenantID := middleware.MustGetTenantID(c)
 
@@ -89,7 +125,20 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	})
 }
 
-// SearchUsers handles searching users
+// SearchUsers godoc
+// @Summary Search users
+// @Description Search users by query string within a tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param q query string true "Search query"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(20)
+// @Success 200 {object} map[string]interface{} "Search results with pagination"
+// @Failure 400 {object} map[string]interface{} "Invalid parameters"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users/search [get]
 func (h *UserHandler) SearchUsers(c *gin.Context) {
 	tenantID := middleware.MustGetTenantID(c)
 	query := c.Query("q")
@@ -123,7 +172,20 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 	})
 }
 
-// UpdateUser handles updating a user
+// UpdateUser godoc
+// @Summary Update user
+// @Description Update user information within a tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "User ID"
+// @Param user body domain.UpdateUserRequest true "User update request"
+// @Success 200 {object} map[string]interface{} "User updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := middleware.MustGetTenantID(c)
@@ -143,7 +205,19 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
 }
 
-// DeleteUser handles deleting a user
+// DeleteUser godoc
+// @Summary Delete user (soft delete)
+// @Description Soft delete a user within a tenant
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]interface{} "User deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := middleware.MustGetTenantID(c)

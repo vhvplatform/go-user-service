@@ -270,7 +270,34 @@ For comprehensive Windows development instructions, including troubleshooting an
 
 ## API Documentation
 
-See [docs/API.md](docs/API.md) for API documentation.
+### Swagger UI
+
+The service includes interactive API documentation via Swagger UI.
+
+**Access Swagger UI:**
+- Development: http://localhost:8082/swagger/index.html
+- Production: https://your-domain.com/swagger/index.html
+
+**Generate Swagger Documentation:**
+```bash
+# Install swag CLI tool (first time only)
+make install-swag
+
+# Generate swagger docs
+make swagger
+
+# Format swagger comments
+make swagger-fmt
+```
+
+**Swagger Features:**
+- Interactive API testing
+- Request/response schema documentation
+- Authentication support
+- Multi-tenancy header documentation
+- Example requests and responses
+
+See [docs/API.md](docs/API.md) for detailed API documentation.
 
 ## Deployment
 
