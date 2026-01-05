@@ -141,11 +141,11 @@ func startHTTPServer(userService *service.UserService, log *logger.Logger, port 
 	router.GET("/api/v1/users/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check endpoints
-	router.GET("/api/v1/users/health", func(c *gin.Context) {
+	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
-	router.GET("/api/v1/users/ready", func(c *gin.Context) {
+	router.GET("/ready", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 
