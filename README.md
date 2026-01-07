@@ -8,6 +8,25 @@
 
 The User Service is a comprehensive microservice for managing user profiles, authentication data, and preferences in a multi-tenant SaaS environment. It provides robust CRUD operations, advanced search capabilities, and GDPR compliance features.
 
+## Repository Structure
+
+This repository follows a multi-platform architecture with the following structure:
+
+```
+go-user-service/
+├── server/          # Golang backend microservice
+├── client/          # ReactJS frontend application (coming soon)
+├── flutter/         # Flutter mobile application (coming soon)
+└── docs/            # Project documentation
+```
+
+### Directories
+
+- **server/**: Contains the Golang backend microservice code, including API endpoints, business logic, and data access layers. See [server/README.md](server/README.md) for details.
+- **client/**: ReactJS frontend application for web-based user interface (planned).
+- **flutter/**: Flutter mobile application for iOS and Android (planned).
+- **docs/**: Comprehensive project documentation including architecture, API specs, and development guides.
+
 ## Features
 
 ### User Management
@@ -61,48 +80,55 @@ The service integrates with go-infrastructure's hybrid routing patterns:
 
 See [ARCHITECTURAL_CONFORMANCE.md](docs/ARCHITECTURAL_CONFORMANCE.md) for detailed information.
 
+## Getting Started
+
+### Cloning the Repository
+
+**For new repositories:**
+```bash
+git clone https://github.com/vhvplatform/go-user-service.git
+cd go-user-service
+```
+
+**For existing repositories (switching to new structure):**
+```bash
+cd go-user-service
+git fetch origin
+git checkout copilot/update-repository-structure
+git pull origin copilot/update-repository-structure
+```
+
+### Quick Start
+
+Navigate to the specific component you want to work with:
+
+- **Backend Development**: See [server/README.md](server/README.md)
+- **Frontend Development**: See [client/README.md](client/README.md)
+- **Mobile Development**: See [flutter/README.md](flutter/README.md)
+
 ## Prerequisites
 
+### Server (Golang Backend)
 - Go 1.25.5+
 - MongoDB 4.4+ (if applicable)
 - Redis 6.0+ (if applicable)
 - RabbitMQ 3.9+ (if applicable)
 
-### Windows Development Prerequisites
+For detailed server setup, see [server/README.md](server/README.md).
 
-- **Go 1.25.5+**: Download from [golang.org](https://golang.org/dl/)
-- **Git for Windows**: Download from [git-scm.com](https://git-scm.com/download/win)
-- **Make (Optional)**: Use [Chocolatey](https://chocolatey.org/) to install: `choco install make`
-  - Alternatively, use the provided `.bat` scripts instead of Makefile commands
-- **Docker Desktop** (Optional for containerized services): Download from [docker.com](https://www.docker.com/products/docker-desktop)
+### Client (ReactJS Frontend)
+- Node.js 16+ (coming soon)
+- npm or yarn (coming soon)
 
-## Installation
-
-### Linux/macOS
-
-```bash
-# Clone the repository
-git clone https://github.com/vhvplatform/go-user-service.git
-cd go-user-service
-
-# Install dependencies
-go mod download
-```
-
-### Windows
-
-```cmd
-REM Clone the repository
-git clone https://github.com/vhvplatform/go-user-service.git
-cd go-user-service
-
-REM Install dependencies
-deps.bat
-```
+### Flutter (Mobile App)
+- Flutter SDK 3.0+ (coming soon)
+- Android Studio / Xcode (coming soon)
 
 ## Configuration
 
-Environment variables configuration:
+For backend configuration details, see [server/README.md](server/README.md).
+
+Environment variables configuration example:
 
 ```bash
 # Server Configuration
@@ -113,231 +139,63 @@ ENVIRONMENT=development              # development|staging|production
 # Database
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DATABASE=saas_framework
-MONGODB_MAX_POOL_SIZE=100
-MONGODB_MIN_POOL_SIZE=10
 
 # Redis (Optional)
 REDIS_URL=redis://localhost:6379/0
 REDIS_ENABLED=true
-
-# Logging
-LOG_LEVEL=info                       # debug|info|warn|error
-
-# Service Discovery
-TENANT_SERVICE_URL=localhost:50053
-NOTIFICATION_SERVICE_URL=localhost:50054
 ```
 
-Copy the example environment file and update with your values:
-
-**Linux/macOS:**
-```bash
-cp .env.example .env
-```
-
-**Windows:**
-```cmd
-copy .env.example .env
-```
-
-See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment variables.
+See [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment variables.
 
 ## Development
 
-### Running Locally
+All development commands and instructions are now located in the respective component directories:
 
-**Linux/macOS:**
-```bash
-# Run the service
-make run
-
-# Or with go run
-go run cmd/main.go
-```
-
-**Windows:**
-```cmd
-REM Run the service
-run.bat
-
-REM Or with go run
-go run cmd\main.go
-```
-
-### Running with Docker
-
-```bash
-# Build and run (works on all platforms)
-make docker-build
-make docker-run
-```
-
-### Running Tests
-
-**Linux/macOS:**
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-make test-coverage
-```
-
-**Windows:**
-```cmd
-REM Run all tests
-test.bat
-
-REM Run with coverage
-test.bat coverage
-```
-
-### Linting
-
-**Linux/macOS:**
-```bash
-# Run linters
-make lint
-
-# Format code
-make fmt
-```
-
-**Windows:**
-```cmd
-REM Run linters
-lint.bat
-
-REM Format code
-fmt.bat
-```
-
-### Building
-
-**Linux/macOS:**
-```bash
-# Build the service
-make build
-```
-
-**Windows:**
-```cmd
-REM Build the service
-build.bat
-```
-
-### Installing Development Tools
-
-**Linux/macOS:**
-```bash
-make install-tools
-```
-
-**Windows:**
-```cmd
-install-tools.bat
-```
-
-### Cleaning Build Artifacts
-
-**Linux/macOS:**
-```bash
-make clean
-```
-
-**Windows:**
-```cmd
-clean.bat
-```
-
-## Windows Development
-
-For comprehensive Windows development instructions, including troubleshooting and IDE setup, see the [Windows Development Guide](docs/WINDOWS_DEVELOPMENT.md).
-
-### Quick Reference - Windows Commands
-
-| Task | Linux/macOS | Windows |
-|------|-------------|---------|
-| Install dependencies | `make deps` | `deps.bat` |
-| Build service | `make build` | `build.bat` |
-| Run service | `make run` | `run.bat` |
-| Run tests | `make test` | `test.bat` |
-| Run tests with coverage | `make test-coverage` | `test.bat coverage` |
-| Lint code | `make lint` | `lint.bat` |
-| Format code | `make fmt` | `fmt.bat` |
-| Clean artifacts | `make clean` | `clean.bat` |
-| Install dev tools | `make install-tools` | `install-tools.bat` |
-
-## API Documentation
-
-### Swagger UI
-
-The service includes interactive API documentation via Swagger UI.
-
-**Access Swagger UI:**
-- Development: http://localhost:8082/swagger/index.html
-- Production: https://your-domain.com/swagger/index.html
-
-**Generate Swagger Documentation:**
-```bash
-# Install swag CLI tool (first time only)
-make install-swag
-
-# Generate swagger docs
-make swagger
-
-# Format swagger comments
-make swagger-fmt
-```
-
-**Swagger Features:**
-- Interactive API testing
-- Request/response schema documentation
-- Authentication support
-- Multi-tenancy header documentation
-- Example requests and responses
-
-See [docs/API.md](docs/API.md) for detailed API documentation.
-
-## Deployment
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
+- **Server (Backend)**: See [server/README.md](server/README.md) for build, test, and run instructions
+- **Client (Frontend)**: See [client/README.md](client/README.md) (coming soon)
+- **Flutter (Mobile)**: See [flutter/README.md](flutter/README.md) (coming soon)
 
 ## Architecture
 
-### Clean Architecture Pattern
-The service follows clean architecture principles with clear separation of concerns:
+This service conforms to the [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) architectural standards for hybrid multi-tenant SaaS applications.
 
+### Tenancy Middleware
+
+All API endpoints require the `X-Tenant-ID` header for tenant isolation:
+
+```bash
+curl -H "X-Tenant-ID: tenant-123" http://localhost:8082/api/v1/users
 ```
-cmd/           # Application entry points
-internal/
-  ├── domain/      # Business entities and interfaces
-  ├── service/     # Business logic layer
-  ├── repository/  # Data access layer
-  ├── handler/     # HTTP request handlers
-  └── grpc/        # gRPC service implementation
-```
+
+The service integrates with go-infrastructure's hybrid routing patterns:
+- **Pattern A**: Subfolder routing (`saas.com/{tenant}/api/*`)
+- **Pattern B**: Custom domain routing (`customer.com/api/*`)
+
+See [docs/ARCHITECTURAL_CONFORMANCE.md](docs/ARCHITECTURAL_CONFORMANCE.md) for detailed information.
+
+### Clean Architecture Pattern
+The backend service follows clean architecture principles with clear separation of concerns.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation and [docs/DESIGN_ANALYSIS_VI.md](docs/DESIGN_ANALYSIS_VI.md) for comprehensive design and analysis documentation in Vietnamese.
 
 ### Technology Stack
-- **Language**: Go 1.25.5
-- **Web Framework**: Gin (HTTP) + gRPC
-- **Database**: MongoDB 4.4+
-- **Cache**: Redis 6.0+ (optional)
-- **Logging**: Uber Zap
-- **Validation**: go-playground/validator
+- **Backend**: Go 1.25.5, Gin (HTTP), gRPC, MongoDB, Redis
+- **Frontend**: ReactJS (planned)
+- **Mobile**: Flutter (planned)
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
-See [docs/DESIGN_ANALYSIS_VI.md](docs/DESIGN_ANALYSIS_VI.md) for comprehensive design and analysis documentation in Vietnamese.
-See [docs/diagrams/](docs/diagrams/) for PlantUML diagrams.
+See [server/README.md](server/README.md) for backend-specific architecture details.
 
 ## API Documentation
 
-### HTTP Endpoints
+For detailed API documentation including HTTP endpoints, gRPC services, and Swagger UI access, see:
+- [docs/API.md](docs/API.md) - Complete API documentation
+- [server/README.md](server/README.md) - Backend API details
 
-#### Create User
+### Quick Example - Create User
 ```http
 POST /api/v1/users
 Content-Type: application/json
+X-Tenant-ID: tenant123
 
 {
   "email": "user@example.com",
@@ -347,56 +205,6 @@ Content-Type: application/json
   "phone": "+1234567890"
 }
 ```
-
-#### Get User
-```http
-GET /api/v1/users/:id
-X-Tenant-ID: tenant123
-```
-
-#### List Users
-```http
-GET /api/v1/users?page=1&page_size=20
-X-Tenant-ID: tenant123
-```
-
-#### Search Users
-```http
-GET /api/v1/users/search?query=john&page=1&page_size=20
-X-Tenant-ID: tenant123
-```
-
-#### Update User
-```http
-PUT /api/v1/users/:id
-X-Tenant-ID: tenant123
-Content-Type: application/json
-
-{
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "phone": "+1987654321",
-  "avatar_url": "https://example.com/avatar.jpg"
-}
-```
-
-#### Delete User (Soft Delete)
-```http
-DELETE /api/v1/users/:id
-X-Tenant-ID: tenant123
-```
-
-### gRPC Services
-
-The service exposes gRPC endpoints for inter-service communication:
-- `UserService.CreateUser`
-- `UserService.GetUser`
-- `UserService.ListUsers`
-- `UserService.SearchUsers`
-- `UserService.UpdateUser`
-- `UserService.DeleteUser`
-
-See [proto/](proto/) for complete protobuf definitions.
 
 ## Contributing
 
