@@ -1,54 +1,48 @@
-name: Deploy to Staging
+name: Build and Push Staging Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to deploy (e.g., v1.2.3)'
-        required: true
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  push:
+    branches:
+      - main  # Kích hoạt khi push vào nhánh main theo yêu cầu của bạn
 
 jobs:
-  deploy:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://staging.saas-platform.io
+  build-and-push:
+    # 1. Sử dụng đúng Runner trong ảnh của bạn
+    runs-on: [self-hosted, Linux, X64, build-image-staging-runner]
 
     steps:
-      - name: Checkout code
+      # 2. Checkout Repo chính (go-user-service) vào thư mục cùng tên
+      - name: Checkout Main Repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          path: go-user-service
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-
-      - name: Configure kubectl
-        run: |
-          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > kubeconfig
-          export KUBECONFIG=./kubeconfig
-
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl set image deployment/${{ github.event.repository.name }} \
-            ${{ github.event.repository.name }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }} \
-            -n saas-framework-staging
-          kubectl rollout status deployment/${{ github.event.repository.name }} -n saas-framework-staging
-
-      - name: Run smoke tests
-        run: |
-          # Add smoke tests here
-          curl -f https://staging.saas-platform.io/health || exit 1
-
-      - name: Notify Slack
-        uses: 8398a7/action-slack@v3
+      # 3. Checkout Repo thư viện (Ví dụ: go-lib) vào thư mục bên cạnh
+      # Lưu ý: Bạn cần tạo một PAT (Personal Access Token) có quyền đọc repo thư viện
+      - name: Checkout Library Repo
+        uses: actions/checkout@v4
         with:
-          status: ${{ job.status }}
-          text: 'Deployed ${{ github.event.inputs.version }} to staging'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        if: always()
+          repository: github.com/vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
+          token: ${{ secrets.MY_GITHUB_PAT }} 
+          path: go-lib-shared
+
+      # 4. Login vào Private Registry
+      - name: Login to Private Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_URL }} # Ví dụ: ghcr.io hoặc 123.456.7.8:5000
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      # 5. Build Image từ vị trí bên ngoài 2 repo
+      - name: Build Docker Image
+        run: |
+          # Đứng ở thư mục gốc (nơi chứa cả 2 repo)
+          docker build -t ${{ secrets.REGISTRY_URL }}/saas/go-user-service:staging \
+            -f go-user-service/Dockerfile . 
+          # Lưu ý: Dockerfile của bạn phải copy được các file từ ../go-lib-shared
+
+      # 6. Push Image lên Private Registry
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.REGISTRY_URL }}/saas-go/go-user-service:staging
