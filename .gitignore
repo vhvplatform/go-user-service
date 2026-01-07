@@ -51,6 +51,3 @@ logs/
 
 # Documentation build
 docs/_build/
-
-#air
-.air.toml

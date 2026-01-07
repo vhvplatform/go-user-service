@@ -56,6 +56,7 @@ docs/
 ### Project History
 - [CHANGELOG.md](CHANGELOG.md) - Version history and changes
 - [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) - Implementation details
+- [RESTRUCTURE_GUIDE.md](RESTRUCTURE_GUIDE.md) - Repository restructure guide
 
 ## Quick Links
 
