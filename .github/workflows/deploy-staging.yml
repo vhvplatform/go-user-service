@@ -24,7 +24,7 @@ jobs:
         with:
           repository: github.com/vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
           token: ${{ secrets.MY_GITHUB_PAT }} 
-          path: go-lib-shared
+          path: go-shared
 
       # 4. Login vào Private Registry
       - name: Login to Private Registry
@@ -35,6 +35,9 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       # 5. Build Image từ vị trí bên ngoài 2 repo
+      - name:
+        run: |
+          ls && pwd
       - name: Build Docker Image
         run: |
           # Đứng ở thư mục gốc (nơi chứa cả 2 repo)
