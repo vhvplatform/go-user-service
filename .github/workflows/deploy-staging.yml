@@ -22,7 +22,7 @@ jobs:
       - name: Checkout Library Repo
         uses: actions/checkout@v4
         with:
-          repository: github.com/vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
+          repository: vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
           token: ${{ secrets.MY_GITHUB_PAT }} 
           path: go-shared
 
