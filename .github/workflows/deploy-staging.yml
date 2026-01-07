@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-push:
     # 1. Sử dụng đúng Runner trong ảnh của bạn
-    runs-on: [self-hosted, Linux, X64, build-image-staging-runner]
+    runs-on: [self-hosted, Linux, X64, build-image-staging-runner]https://github.com/vhvplatform/go-user-service/blob/main/.github/workflows/deploy-staging.yml
 
     steps:
       # 2. Checkout Repo chính (go-user-service) vào thư mục cùng tên
@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       # 5. Build Image từ vị trí bên ngoài 2 repo
-      - name:
+      - name: Debug
         run: |
           ls && pwd
       - name: Build Docker Image
