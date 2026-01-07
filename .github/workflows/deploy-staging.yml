@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-push:
     # 1. Sử dụng đúng Runner trong ảnh của bạn
-    runs-on: [self-hosted, Linux, X64, build-image-staging-runner]https://github.com/vhvplatform/go-user-service/blob/main/.github/workflows/deploy-staging.yml
+    runs-on: [self-hosted, Linux, X64, build-image-staging-runner]
 
     steps:
       # 2. Checkout Repo chính (go-user-service) vào thư mục cùng tên
