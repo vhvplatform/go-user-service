@@ -56,7 +56,8 @@ docs/
 ### Project History
 - [CHANGELOG.md](CHANGELOG.md) - Version history and changes
 - [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) - Implementation details
-- [RESTRUCTURE_GUIDE.md](RESTRUCTURE_GUIDE.md) - Repository restructure guide
+- [RESTRUCTURE_GUIDE.md](RESTRUCTURE_GUIDE.md) - Repository restructure guide (English)
+- [RESTRUCTURE_GUIDE_VI.md](RESTRUCTURE_GUIDE_VI.md) - Hướng dẫn cấu trúc mới (Tiếng Việt)
 
 ## Quick Links
 

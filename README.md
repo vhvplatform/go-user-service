@@ -7,6 +7,8 @@ This repository contains the complete User Service implementation across multipl
 - Frontend Web Application (ReactJS)
 - Mobile Application (Flutter)
 
+> **📋 New Repository Structure**: This repository has been restructured for multi-platform development. See [Restructure Guide](docs/RESTRUCTURE_GUIDE.md) | [Hướng dẫn cấu trúc mới (Tiếng Việt)](docs/RESTRUCTURE_GUIDE_VI.md)
+
 ## Repository Structure
 
 ```
