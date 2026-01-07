@@ -4,6 +4,23 @@
 > 
 > **Conforms to**: [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) architectural standards
 
+## Quick Start
+
+### For New Clones (First Time Setup)
+```bash
+git clone https://github.com/vhvplatform/go-user-service.git
+cd go-user-service
+git checkout copilot/update-repository-structure
+```
+
+### For Existing Repositories (Switch to New Structure)
+```bash
+cd go-user-service
+git fetch origin
+git checkout copilot/update-repository-structure
+git pull origin copilot/update-repository-structure
+```
+
 ## Description
 
 The User Service is a comprehensive microservice for managing user profiles, authentication data, and preferences in a multi-tenant SaaS environment. It provides robust CRUD operations, advanced search capabilities, and GDPR compliance features.
