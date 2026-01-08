@@ -81,5 +81,3 @@ require (
 )
 
 exclude github.com/pelletier/go-toml/v3 v3.0.0
-
-replace github.com/vhvplatform/go-shared => ../../go-shared
