@@ -2,15 +2,95 @@ syntax = "proto3";
 
 package user;
 
+import "google/api/annotations.proto";
+
 option go_package = "github.com/vhvplatform/go-user-service/proto";
 
 // UserService provides user management functionality
 service UserService {
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
-  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
-  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}"
+    };
+  }
+
+  rpc GetUserByIdentifier(GetUserByIdentifierRequest) returns (GetUserByIdentifierResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/by-identifier"
+      body: "*"
+    };
+  }
+
+  rpc GetUserTenants(GetUserTenantsRequest) returns (GetUserTenantsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/tenants"
+    };
+  }
+
+  rpc AddUserToTenant(AddUserToTenantRequest) returns (AddUserToTenantResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/{user_id}/tenants"
+      body: "*"
+    };
+  }
+
+  rpc RemoveUserFromTenant(RemoveUserFromTenantRequest) returns (RemoveUserFromTenantResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/users/{user_id}/tenants/{tenant_id}"
+    };
+  }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users"
+    };
+  }
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users"
+      body: "*"
+    };
+  }
+
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/users/{user_id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/users/{user_id}"
+    };
+  }
+
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/search"
+    };
+  }
+
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/verify-token"
+      body: "*"
+    };
+  }
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+  string tenant_id = 2; // Optional, to verify access to specific tenant
+}
+
+message VerifyTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  repeated string tenant_ids = 3; // List of tenants user belongs to
+  string role = 4;
+  map<string, string> claims = 5;
 }
 
 message GetUserRequest {
@@ -72,12 +152,77 @@ message SearchUsersResponse {
 message User {
   string id = 1;
   string email = 2;
-  string tenant_id = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string phone = 6;
-  string avatar_url = 7;
-  bool is_active = 8;
-  string created_at = 9;
-  string updated_at = 10;
+  string username = 3;
+  string phone = 4;
+  string document_number = 5;
+  string first_name = 6;
+  string last_name = 7;
+  string avatar_url = 8;
+  bool is_active = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  string password_hash = 12; // Only for internal use, never expose in API responses
+}
+
+message UserTenant {
+  string user_id = 1;
+  string tenant_id = 2;
+  repeated string roles = 3;
+  bool is_active = 4;
+  string joined_at = 5;
+}
+
+message GetUserByIdentifierRequest {
+  string identifier = 1; // Can be email, username, phone, document_number
+  string identifier_type = 2; // "email", "username", "phone", "document_number"
+  string tenant_id = 3; // Optional: filter by tenant
+}
+
+message GetUserByIdentifierResponse {
+  User user = 1;
+  repeated UserTenant tenants = 2; // List of tenants the user belongs to
+}
+
+message GetUserTenantsRequest {
+  string user_id = 1;
+}
+
+message GetUserTenantsResponse {
+  repeated UserTenant tenants = 1;
+}
+
+message AddUserToTenantRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+  repeated string roles = 3;
+}
+
+message AddUserToTenantResponse {
+  bool success = 1;
+  UserTenant user_tenant = 2;
+}
+
+message RemoveUserFromTenantRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+}
+
+message RemoveUserFromTenantResponse {
+  bool success = 1;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string username = 2;
+  string phone = 3;
+  string document_number = 4;
+  string password = 5;
+  string first_name = 6;
+  string last_name = 7;
+  string tenant_id = 8; // Initial tenant to add user to
+  repeated string roles = 9; // Initial roles in the tenant
+}
+
+message CreateUserResponse {
+  User user = 1;
 }

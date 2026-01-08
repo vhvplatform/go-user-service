@@ -1,0 +1,47 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Dark Mode Improvements */
+.dark {
+  /* Better table text visibility */
+  & table {
+    & thead {
+      & th {
+        color: var(--foreground);
+      }
+    }
+    
+    & tbody {
+      & td {
+        color: var(--card-foreground);
+      }
+    }
+  }
+  
+  /* Better card backgrounds */
+  & [class*='bg-white'] {
+    &[class*='backdrop-blur'] {
+      @apply bg-card/90;
+    }
+  }
+  
+  /* Better input backgrounds */
+  & input,
+  & select,
+  & textarea {
+    @apply bg-input-background text-foreground;
+    
+    &::placeholder {
+      @apply text-muted-foreground;
+    }
+  }
+  
+  /* Better modal backgrounds */
+  & [class*='modal'],
+  & [class*='Modal'] {
+    & > div {
+      @apply bg-card text-card-foreground;
+    }
+  }
+}

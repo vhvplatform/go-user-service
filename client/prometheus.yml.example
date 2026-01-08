@@ -1,0 +1,83 @@
+# ==================================
+# Prometheus Configuration
+# ==================================
+# Copy to prometheus.yml and customize
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'vhv-platform'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules
+rule_files:
+  - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # Frontend metrics (if exposed)
+  - job_name: 'frontend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['frontend:3000']
+        labels:
+          service: 'frontend'
+          app: 'vhv-platform'
+
+  # Backend API services
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:8080']
+        labels:
+          service: 'user-service'
+          type: 'backend'
+
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8080']
+        labels:
+          service: 'auth-service'
+          type: 'backend'
+
+  # Node Exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+
+  # Nginx metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+        labels:
+          service: 'nginx'
+
+  # PostgreSQL metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres'
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'

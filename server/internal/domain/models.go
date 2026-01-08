@@ -6,18 +6,34 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// User represents a user profile in the system
+// User represents a global user identity
 type User struct {
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Email        string             `bson:"email" json:"email"`
+	PasswordHash string             `bson:"passwordHash,omitempty" json:"-"`
+	Phone        string             `bson:"phone,omitempty" json:"phone,omitempty"`
+	AvatarURL    string             `bson:"avatarUrl,omitempty" json:"avatar_url,omitempty"`
+	IsActive     bool               `bson:"isActive" json:"is_active"`
+	CreatedAt    time.Time          `bson:"createdAt" json:"created_at"`
+	UpdatedAt    time.Time          `bson:"updatedAt" json:"updated_at"`
+}
+
+// UserTenant represents the association between a user and a tenant
+type UserTenant struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Email     string             `bson:"email" json:"email"`
+	UserID    primitive.ObjectID `bson:"userId" json:"user_id"`
 	TenantID  string             `bson:"tenantId" json:"tenant_id"`
-	FirstName string             `bson:"firstName" json:"first_name"`
-	LastName  string             `bson:"lastName" json:"last_name"`
-	Phone     string             `bson:"phone,omitempty" json:"phone,omitempty"`
-	AvatarURL string             `bson:"avatarUrl,omitempty" json:"avatar_url,omitempty"`
+	Roles     []string           `bson:"roles" json:"roles"`
+	FirstName string             `bson:"firstName,omitempty" json:"first_name"`
+	LastName  string             `bson:"lastName,omitempty" json:"last_name"`
 	IsActive  bool               `bson:"isActive" json:"is_active"`
-	CreatedAt time.Time          `bson:"createdAt" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updatedAt" json:"updated_at"`
+	JoinedAt  time.Time          `bson:"joinedAt" json:"joined_at"`
+}
+
+// UserProfile represents the combined view of a user and their tenant context
+type UserProfile struct {
+	User       *User
+	UserTenant *UserTenant
 }
 
 // UserPreferences represents user preferences

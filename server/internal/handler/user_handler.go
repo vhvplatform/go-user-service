@@ -50,13 +50,13 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	// Override tenant ID from middleware (header takes precedence)
 	req.TenantID = middleware.MustGetTenantID(c)
 
-	user, err := h.userService.CreateUser(c.Request.Context(), &req)
+	userProfile, err := h.userService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": h.toUserResponse(user)})
+	c.JSON(http.StatusCreated, gin.H{"data": h.toUserResponse(userProfile)})
 }
 
 // GetUser godoc
@@ -76,13 +76,13 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	userID := c.Param("id")
 	tenantID := middleware.MustGetTenantID(c)
 
-	user, err := h.userService.GetUser(c.Request.Context(), userID, tenantID)
+	userProfile, err := h.userService.GetUser(c.Request.Context(), userID, tenantID)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
+	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(userProfile)})
 }
 
 // ListUsers godoc
@@ -104,15 +104,15 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("itemsPerPage", "20"))
 
-	users, total, err := h.userService.ListUsers(c.Request.Context(), tenantID, page, pageSize)
+	profiles, total, err := h.userService.ListUsers(c.Request.Context(), tenantID, page, pageSize)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
 
-	userResponses := make([]domain.UserResponse, len(users))
-	for i, user := range users {
-		userResponses[i] = h.toUserResponse(user)
+	userResponses := make([]domain.UserResponse, len(profiles))
+	for i, p := range profiles {
+		userResponses[i] = h.toUserResponse(p)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -151,15 +151,15 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("itemsPerPage", "20"))
 
-	users, total, err := h.userService.SearchUsers(c.Request.Context(), tenantID, query, page, pageSize)
+	profiles, total, err := h.userService.SearchUsers(c.Request.Context(), tenantID, query, page, pageSize)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
 
-	userResponses := make([]domain.UserResponse, len(users))
-	for i, user := range users {
-		userResponses[i] = h.toUserResponse(user)
+	userResponses := make([]domain.UserResponse, len(profiles))
+	for i, p := range profiles {
+		userResponses[i] = h.toUserResponse(p)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -196,13 +196,13 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.UpdateUser(c.Request.Context(), userID, tenantID, &req)
+	userProfile, err := h.userService.UpdateUser(c.Request.Context(), userID, tenantID, &req)
 	if err != nil {
 		h.respondError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(user)})
+	c.JSON(http.StatusOK, gin.H{"data": h.toUserResponse(userProfile)})
 }
 
 // DeleteUser godoc
@@ -231,18 +231,18 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 }
 
 // toUserResponse converts a user domain model to a response
-func (h *UserHandler) toUserResponse(user *domain.User) domain.UserResponse {
+func (h *UserHandler) toUserResponse(profile *domain.UserProfile) domain.UserResponse {
 	return domain.UserResponse{
-		ID:        user.ID.Hex(),
-		Email:     user.Email,
-		TenantID:  user.TenantID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Phone:     user.Phone,
-		AvatarURL: user.AvatarURL,
-		IsActive:  user.IsActive,
-		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:        profile.User.ID.Hex(),
+		Email:     profile.User.Email,
+		TenantID:  profile.UserTenant.TenantID,
+		FirstName: profile.UserTenant.FirstName,
+		LastName:  profile.UserTenant.LastName,
+		Phone:     profile.User.Phone,
+		AvatarURL: profile.User.AvatarURL,
+		IsActive:  profile.User.IsActive && profile.UserTenant.IsActive, // Both must be active? Or just Tenant?
+		CreatedAt: profile.User.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: profile.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }
 

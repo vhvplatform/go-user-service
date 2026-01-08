@@ -1,0 +1,45 @@
+# Node
+node_modules/
+
+# Build / output
+dist/
+build/
+out/
+coverage/
+
+# Env files (keep .env.example in repo)
+.env
+.env.local
+.env.dev
+.env.staging
+.env.prod
+.env.test
+
+# Allow the example/template env file to stay tracked
+!.env.example
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+.cache/
+coverage/
+report.html
+
+# Lockfiles (optional)
+# package-lock.json
+
+# Ignore environment override files created by editors
+*.local

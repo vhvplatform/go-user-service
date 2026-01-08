@@ -1,0 +1,180 @@
+# ==================================
+# Nginx Configuration for VHV Platform
+# ==================================
+# This configuration handles reverse proxy to microservices
+# to avoid CORS issues in production
+
+# Upstream servers (microservices)
+upstream user_service {
+    # User Management Microservice
+    server go-user-service:8081;
+    # Add more instances for load balancing
+    # server go-user-service-2:8081;
+}
+
+upstream auth_service {
+    # Authentication Microservice
+    server go-auth-service:8082;
+}
+
+upstream file_service {
+    # File Manager Microservice
+    server go-file-service:8083;
+}
+
+# Main server block
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com www.your-domain.com;
+
+    # Redirect HTTP to HTTPS in production
+    # return 301 https://$server_name$request_uri;
+
+    # Root directory for static files
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Enable gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/json
+        application/xml+rss
+        image/svg+xml;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # CORS headers (if needed for external access)
+    # add_header Access-Control-Allow-Origin "*" always;
+    # add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+    # add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+    # API Proxy Configuration
+    # All /api/* requests are proxied to microservices
+
+    # User Service Proxy
+    location /api/users {
+        # Remove /api/users prefix and proxy to /users on microservice
+        rewrite ^/api/users(.*)$ /users$1 break;
+        
+        proxy_pass http://user_service;
+        proxy_http_version 1.1;
+        
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        
+        # Timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+        
+        # Buffering
+        proxy_buffering off;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Auth Service Proxy
+    location /api/auth {
+        rewrite ^/api/auth(.*)$ /auth$1 break;
+        
+        proxy_pass http://auth_service;
+        proxy_http_version 1.1;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+    }
+
+    # File Service Proxy
+    location /api/files {
+        rewrite ^/api/files(.*)$ /files$1 break;
+        
+        proxy_pass http://file_service;
+        proxy_http_version 1.1;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Increase timeout for file uploads
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Increase max upload size
+        client_max_body_size 100M;
+    }
+
+    # Health check endpoint
+    location /api/health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Static files - React app
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Custom error pages
+    error_page 404 /index.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+
+# HTTPS server block (for production with SSL)
+# Uncomment and configure when using SSL
+#
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     server_name your-domain.com www.your-domain.com;
+#
+#     # SSL Configuration
+#     ssl_certificate /etc/nginx/ssl/cert.pem;
+#     ssl_certificate_key /etc/nginx/ssl/key.pem;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     ssl_prefer_server_ciphers on;
+#
+#     # Include all location blocks from above
+#     # ... (same configuration as HTTP block)
+# }

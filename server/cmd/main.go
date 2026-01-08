@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
@@ -22,9 +24,10 @@ import (
 	"github.com/vhvplatform/go-user-service/internal/middleware"
 	"github.com/vhvplatform/go-user-service/internal/repository"
 	"github.com/vhvplatform/go-user-service/internal/service"
-	// pb "github.com/vhvplatform/go-user-service/proto"
+	pb "github.com/vhvplatform/go-user-service/proto"
 	"go.uber.org/zap"
 	grpcServer "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -104,10 +107,64 @@ func startGRPCServer(userService *service.UserService, log *logger.Logger, port 
 		log.Fatal("Failed to listen", zap.Error(err))
 	}
 
-	grpcSrv := grpcServer.NewServer()
+	var opts []grpcServer.ServerOption
+
+	// mTLS Configuration
+	certFile := os.Getenv("TLS_CERT_FILE")
+	keyFile := os.Getenv("TLS_KEY_FILE")
+	caFile := os.Getenv("TLS_CA_FILE")
+
+	if certFile != "" && keyFile != "" {
+		// Load server certificate and key
+		creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+		if err != nil {
+			log.Fatal("Failed to load TLS keys", zap.Error(err))
+		}
+
+		// If CA is provided, enable client auth (mTLS)
+		if caFile != "" {
+			caCert, err := os.ReadFile(caFile)
+			if err != nil {
+				log.Fatal("Failed to read CA cert", zap.Error(err))
+			}
+			certPool := x509.NewCertPool()
+			if !certPool.AppendCertsFromPEM(caCert) {
+				log.Fatal("Failed to append CA cert")
+			}
+
+			// Create TLS configuration with Client Auth
+			tlsConfig := &tls.Config{
+				ClientCAs:    certPool,
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+				Certificates: []tls.Certificate{
+					// creds.info... wait, NewServerTLSFromFile returns TransportCredentials.
+					// We need to build manual TLS config if we want ClientAuth.
+				},
+			}
+			_ = tlsConfig // Logic implementation detail: credentials.NewTLS wraps tls.Config.
+
+			// Actually, credentials.NewTLS uses a fully populated tls.Config.
+			// Let's use credentials.NewTLS which takes *tls.Config.
+			cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+			if err != nil {
+				log.Fatal("Failed to load key pair", zap.Error(err))
+			}
+
+			tlsConfig = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				ClientCAs:    certPool,
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+			}
+			creds = credentials.NewTLS(tlsConfig)
+		}
+
+		opts = append(opts, grpcServer.Creds(creds))
+		log.Info("gRPC Server TLS enabled")
+	}
+
+	grpcSrv := grpcServer.NewServer(opts...)
 	userGrpcServer := grpc.NewUserServiceServer(userService, log)
-	// pb.RegisterUserServiceServer(grpcSrv, userGrpcServer)
-	_ = userGrpcServer // Use the variable to avoid unused error
+	pb.RegisterUserServiceServer(grpcSrv, userGrpcServer)
 
 	// Register health check service
 	healthServer := health.NewServer()

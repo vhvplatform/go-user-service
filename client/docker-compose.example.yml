@@ -1,0 +1,182 @@
+# ==================================
+# Docker Compose for VHV Platform
+# ==================================
+# Full stack deployment with frontend + microservices + nginx proxy
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # Frontend - React Application
+  # ==========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vhv-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - VITE_APP_MODE=production
+      - VITE_USE_MOCK_DATA=false
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+    depends_on:
+      - user-service
+      - auth-service
+    networks:
+      - vhv-network
+
+  # ==========================================
+  # Nginx Reverse Proxy
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: vhv-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./dist:/usr/share/nginx/html:ro
+      # Uncomment for SSL
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - user-service
+      - auth-service
+      - file-service
+    networks:
+      - vhv-network
+
+  # ==========================================
+  # Microservices
+  # ==========================================
+  
+  # User Service
+  user-service:
+    image: vhvplatform/go-user-service:latest
+    container_name: go-user-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - DATABASE_URL=postgresql://user:password@postgres:5432/userdb
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=*
+    depends_on:
+      - postgres
+    networks:
+      - vhv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Auth Service
+  auth-service:
+    image: vhvplatform/go-auth-service:latest
+    container_name: go-auth-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - DATABASE_URL=postgresql://user:password@postgres:5432/authdb
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=24h
+    depends_on:
+      - postgres
+    networks:
+      - vhv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # File Service
+  file-service:
+    image: vhvplatform/go-file-service:latest
+    container_name: go-file-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=8083
+      - STORAGE_PATH=/app/storage
+      - MAX_UPLOAD_SIZE=100MB
+    volumes:
+      - file-storage:/app/storage
+    networks:
+      - vhv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # Database
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: vhv-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_MULTIPLE_DATABASES=userdb,authdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - vhv-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis Cache (optional)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: vhv-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - vhv-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  vhv-network:
+    driver: bridge
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  file-storage:
+    driver: local
