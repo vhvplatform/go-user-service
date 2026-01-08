@@ -13,16 +13,16 @@ jobs:
     steps:
       # 2. Checkout Repo chính (go-user-service) vào thư mục cùng tên
       - name: Checkout Main Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: go-user-service
 
       # 3. Checkout Repo thư viện (Ví dụ: go-lib) vào thư mục bên cạnh
       # Lưu ý: Bạn cần tạo một PAT (Personal Access Token) có quyền đọc repo thư viện
       - name: Checkout Library Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          repository: github.com/vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
+          repository: vhvplatform/go-shared # Thay bằng link repo thư viện của bạn
           token: ${{ secrets.MY_GITHUB_PAT }} 
           path: go-shared
 
